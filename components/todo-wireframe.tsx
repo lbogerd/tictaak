@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -18,107 +18,140 @@ import {
   Edit3,
   X,
   Trash2,
-  Heart,
   Ticket,
   Archive,
   Rocket,
 } from "lucide-react";
-import { useState } from "react";
 import { DateTime } from "luxon";
+import { createTask, deleteTask, createCategory, deleteCategory } from "@/lib/actions";
+import { printTask } from "@/lib/printer";
 
-// Mock data - just recent tasks for reprinting
-const now = new Date();
-const mockRecentTasks = [
-  {
-    id: 1,
-    title: "🛒 Buy groceries",
-    category: "Personal",
-    createdAt: new Date(now.getTime() - 2 * 60 * 60 * 1000), // 2 hours ago
-  },
-  {
-    id: 2,
-    title: "🦷 Call dentist",
-    category: "Health",
-    createdAt: new Date(now.getTime() - 24 * 60 * 60 * 1000), // 1 day ago
-  },
-  {
-    id: 3,
-    title: "📝 Submit report",
-    category: "Work",
-    createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-  },
-  {
-    id: 4,
-    title: "🐕 Walk the dog",
-    category: "Personal",
-    createdAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-  },
-  {
-    id: 5,
-    title: "📊 Review presentation",
-    category: "Work",
-    createdAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000), // 1 week ago
-  },
-];
+type Category = {
+  id: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
-const mockCategories = ["Personal", "Work", "Health", "Shopping", "Projects"];
-const mockQuickTasks = [
-  "Buy groceries 🛒",
-  "Call dentist 🦷",
-  "Walk the dog 🐕",
-  "Submit report 📝",
-];
+type Task = {
+  id: string;
+  title: string;
+  categoryId: string;
+  category: Category;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
-export default function TodoWireframe() {
+type TodoWireframeProps = {
+  initialTasks: Task[];
+  initialCategories: Category[];
+};
+
+export default function TodoWireframe({ initialTasks, initialCategories }: TodoWireframeProps) {
   const [showNewForm, setShowNewForm] = useState(false);
-  const [recentTasks, setRecentTasks] = useState(mockRecentTasks);
+  const [tasks, setTasks] = useState(initialTasks);
+  const [categories, setCategories] = useState(initialCategories);
   const [newTitle, setNewTitle] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
 
-  const handleCreateAndPrint = () => {
-    if (newTitle.trim()) {
-      const newTask = {
-        id: Date.now(),
-        title: newTitle,
-        category: selectedCategory || "Personal",
-        createdAt: new Date(),
-      };
+  // Keyboard shortcuts
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.ctrlKey && event.key === 'n') {
+        event.preventDefault();
+        setShowNewForm(true);
+      }
+    }
 
-      // Add to recent tasks, filter to unique by title (keep most recent)
-      setRecentTasks((prevTasks) => {
-        // Place newTask at the front, then filter out any tasks with the same title (case-insensitive) after the first occurrence
-        const tasks = [newTask, ...prevTasks];
-        const seenTitles = new Set<string>();
-        const uniqueTasks = [];
-        for (const task of tasks) {
-          const normalizedTitle = task.title.trim().toLowerCase();
-          if (!seenTitles.has(normalizedTitle)) {
-            seenTitles.add(normalizedTitle);
-            uniqueTasks.push(task);
-          }
-        }
-        return uniqueTasks.slice(0, 10); // Keep only 10 most recent unique tasks
-      });
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleCreateAndPrint = async () => {
+    if (!newTitle.trim() || !selectedCategoryId) return;
+
+    try {
+      const task = await createTask(newTitle, selectedCategoryId);
+      setTasks(prev => [task, ...prev]);
 
       // Print the task
-      handlePrint(newTask);
+      await handlePrint(task);
 
       // Reset form
       setNewTitle("");
-      setSelectedCategory("");
+      setSelectedCategoryId("");
       setShowNewForm(false);
+    } catch (error) {
+      console.error('Failed to create task:', error);
     }
   };
 
-  const handlePrint = (task: any) => {
-    console.log(`Printing: ${task.title} [${task.category}]`);
-    // Print logic would go here
-    // Show brief success feedback
+  const handlePrint = async (task: Task) => {
+    if (isPrinting) return;
+    
+    try {
+      setIsPrinting(true);
+      const result = await printTask(task.title, task.category.name, task.createdAt);
+      
+      if (result.success) {
+        console.log('Task printed successfully');
+      } else {
+        console.error('Printing failed:', result.error);
+        alert('Printing failed: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Printing error:', error);
+      alert('Printing error: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setIsPrinting(false);
+    }
   };
 
-  const handleDeleteFromHistory = (id: number) => {
-    setRecentTasks(recentTasks.filter((task) => task.id !== id));
+  const handleDeleteFromHistory = async (id: string) => {
+    try {
+      await deleteTask(id);
+      setTasks(prev => prev.filter(task => task.id !== id));
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+    }
   };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
+
+    try {
+      const category = await createCategory(newCategoryName);
+      setCategories(prev => [...prev, category].sort((a, b) => a.name.localeCompare(b.name)));
+      setSelectedCategoryId(category.id);
+      setNewCategoryName("");
+      setIsCreatingCategory(false);
+    } catch (error) {
+      console.error('Failed to create category:', error);
+      alert('Failed to create category. It might already exist.');
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    if (!confirm('Delete this category? All tasks in this category will also be deleted.')) return;
+
+    try {
+      await deleteCategory(categoryId);
+      setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+      setTasks(prev => prev.filter(task => task.categoryId !== categoryId));
+      if (selectedCategoryId === categoryId) {
+        setSelectedCategoryId("");
+      }
+    } catch (error) {
+      console.error('Failed to delete category:', error);
+      alert('Failed to delete category.');
+    }
+  };
+
+  // Quick task templates based on existing tasks
+  const quickTasks = tasks.slice(0, 4).map(task => task.title);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 p-6">
@@ -162,21 +195,72 @@ export default function TodoWireframe() {
                   className="flex-1 text-lg py-4 rounded-2xl border-rose-200 focus:border-rose-400 focus:ring-rose-200"
                   autoFocus
                 />
-                <Select
-                  value={selectedCategory}
-                  onValueChange={setSelectedCategory}
-                >
-                  <SelectTrigger className="w-52 rounded-2xl border-rose-200 focus:border-rose-400">
-                    <SelectValue placeholder="Choose a category 🏷️" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {mockCategories.map((cat) => (
-                      <SelectItem key={cat} value={cat} className="rounded-lg">
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                
+                {/* Enhanced Category Select */}
+                <div className="w-52">
+                  {isCreatingCategory ? (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="New category name"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleCreateCategory();
+                          if (e.key === "Escape") setIsCreatingCategory(false);
+                        }}
+                        className="rounded-xl border-rose-200 focus:border-rose-400"
+                        autoFocus
+                      />
+                      <Button
+                        onClick={handleCreateCategory}
+                        size="sm"
+                        className="rounded-xl"
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  ) : (
+                    <Select
+                      value={selectedCategoryId}
+                      onValueChange={setSelectedCategoryId}
+                    >
+                      <SelectTrigger className="rounded-2xl border-rose-200 focus:border-rose-400">
+                        <SelectValue placeholder="Choose category 🏷️" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        {categories.map((category) => (
+                          <div key={category.id} className="flex items-center justify-between group">
+                            <SelectItem value={category.id} className="rounded-lg flex-1">
+                              {category.name}
+                            </SelectItem>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteCategory(category.id);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 text-rose-400 hover:text-rose-600"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                        <div className="border-t pt-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setIsCreatingCategory(true)}
+                            className="w-full text-left justify-start text-blue-600 hover:bg-blue-50"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add new category
+                          </Button>
+                        </div>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center justify-between">
@@ -185,10 +269,10 @@ export default function TodoWireframe() {
                     onClick={handleCreateAndPrint}
                     className="bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
                     size="lg"
-                    disabled={!newTitle.trim()}
+                    disabled={!newTitle.trim() || !selectedCategoryId || isPrinting}
                   >
                     <Printer className="w-5 h-5 mr-2" />
-                    Create & Print
+                    {isPrinting ? 'Printing...' : 'Create & Print'}
                   </Button>
                   <Button
                     variant="outline"
@@ -203,25 +287,27 @@ export default function TodoWireframe() {
               </div>
 
               {/* Quick Reuse Section */}
-              <div className="pt-6 border-t border-rose-100">
-                <p className="text-sm text-amber-700 mb-4 font-medium flex items-center gap-1">
-                  <Rocket className="w-4 h-4 mr-2" />
-                  Quick favorites (click to use):
-                </p>
-                <div className="flex gap-3 flex-wrap">
-                  {mockQuickTasks.map((title) => (
-                    <Button
-                      key={title}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setNewTitle(title)}
-                      className="text-sm hover:bg-rose-50 hover:border-rose-300 rounded-xl border-rose-200 text-rose-700 transition-all duration-200"
-                    >
-                      {title}
-                    </Button>
-                  ))}
+              {quickTasks.length > 0 && (
+                <div className="pt-6 border-t border-rose-100">
+                  <p className="text-sm text-amber-700 mb-4 font-medium flex items-center gap-1">
+                    <Rocket className="w-4 h-4 mr-2" />
+                    Quick reuse (click to use):
+                  </p>
+                  <div className="flex gap-3 flex-wrap">
+                    {quickTasks.map((title) => (
+                      <Button
+                        key={title}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setNewTitle(title)}
+                        className="text-sm hover:bg-rose-50 hover:border-rose-300 rounded-xl border-rose-200 text-rose-700 transition-all duration-200"
+                      >
+                        {title}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>
@@ -233,7 +319,7 @@ export default function TodoWireframe() {
             Your Recent Tasks
           </h2>
 
-          {recentTasks.length === 0 ? (
+          {tasks.length === 0 ? (
             <div className="text-center py-12 text-amber-600">
               <div className="text-6xl mb-4">🌱</div>
               <p className="text-lg mb-2">No recent tasks yet!</p>
@@ -243,7 +329,7 @@ export default function TodoWireframe() {
             </div>
           ) : (
             <div className="space-y-4">
-              {recentTasks.map((task) => (
+              {tasks.map((task) => (
                 <Card
                   key={task.id}
                   className="hover:shadow-md transition-all duration-300 transform hover:scale-[1.01] rounded-2xl border-rose-100 bg-gradient-to-r from-white to-rose-50/50"
@@ -259,7 +345,7 @@ export default function TodoWireframe() {
                             variant="outline"
                             className="text-xs rounded-full border-rose-200 text-rose-700 bg-rose-50"
                           >
-                            {task.category}
+                            {task.category.name}
                           </Badge>
                           <span className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
                             {DateTime.fromJSDate(task.createdAt).toRelative()}
@@ -272,10 +358,11 @@ export default function TodoWireframe() {
                           variant="outline"
                           size="sm"
                           onClick={() => handlePrint(task)}
+                          disabled={isPrinting}
                           className="text-blue-600 border-blue-200 hover:bg-blue-50 rounded-xl"
                         >
                           <Printer className="w-4 h-4 mr-1" />
-                          Reprint
+                          {isPrinting ? 'Printing...' : 'Reprint'}
                         </Button>
 
                         <Button
@@ -283,7 +370,7 @@ export default function TodoWireframe() {
                           size="sm"
                           onClick={() => {
                             setNewTitle(task.title);
-                            setSelectedCategory(task.category);
+                            setSelectedCategoryId(task.categoryId);
                             setShowNewForm(true);
                           }}
                           className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 rounded-xl"
