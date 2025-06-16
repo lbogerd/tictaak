@@ -24,6 +24,7 @@ import {
   Rocket,
 } from "lucide-react";
 import { useState } from "react";
+import { DateTime } from "luxon";
 
 // Mock data - just recent tasks for reprinting
 const now = new Date();
@@ -261,7 +262,7 @@ export default function TodoWireframe() {
                             {task.category}
                           </Badge>
                           <span className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
-                            {task.createdAt.toDateString()}
+                            {DateTime.fromJSDate(task.createdAt).toRelative()}
                           </span>
                         </div>
                       </div>
