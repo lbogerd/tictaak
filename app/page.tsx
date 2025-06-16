@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import TodoWireframe from "../todo-wireframe"
+import TodoWireframe from "../todo-wireframe";
 
 export default function Page() {
-  return <TodoWireframe />
+  return <TodoWireframe />;
 }
