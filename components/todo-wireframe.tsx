@@ -23,7 +23,12 @@ import {
   Rocket,
 } from "lucide-react";
 import { DateTime } from "luxon";
-import { createTask, deleteTask, createCategory, deleteCategory } from "@/lib/actions";
+import {
+  createTask,
+  deleteTask,
+  createCategory,
+  deleteCategory,
+} from "@/lib/actions";
 import { printTask } from "@/lib/printer";
 
 type Category = {
@@ -47,7 +52,10 @@ type TodoWireframeProps = {
   initialCategories: Category[];
 };
 
-export default function TodoWireframe({ initialTasks, initialCategories }: TodoWireframeProps) {
+export default function TodoWireframe({
+  initialTasks,
+  initialCategories,
+}: TodoWireframeProps) {
   const [showNewForm, setShowNewForm] = useState(false);
   const [tasks, setTasks] = useState(initialTasks);
   const [categories, setCategories] = useState(initialCategories);
@@ -60,14 +68,18 @@ export default function TodoWireframe({ initialTasks, initialCategories }: TodoW
   // Keyboard shortcuts
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.ctrlKey && event.key === 'n') {
+      // Check for Ctrl+/ using multiple key detection methods for better compatibility
+      if (
+        event.ctrlKey &&
+        (event.key === "/" || event.code === "Slash" || event.keyCode === 191)
+      ) {
         event.preventDefault();
         setShowNewForm(true);
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const handleCreateAndPrint = async () => {
@@ -75,7 +87,7 @@ export default function TodoWireframe({ initialTasks, initialCategories }: TodoW
 
     try {
       const task = await createTask(newTitle, selectedCategoryId);
-      setTasks(prev => [task, ...prev]);
+      setTasks((prev) => [task, ...prev]);
 
       // Print the task
       await handlePrint(task);
@@ -85,26 +97,33 @@ export default function TodoWireframe({ initialTasks, initialCategories }: TodoW
       setSelectedCategoryId("");
       setShowNewForm(false);
     } catch (error) {
-      console.error('Failed to create task:', error);
+      console.error("Failed to create task:", error);
     }
   };
 
   const handlePrint = async (task: Task) => {
     if (isPrinting) return;
-    
+
     try {
       setIsPrinting(true);
-      const result = await printTask(task.title, task.category.name, task.createdAt);
-      
+      const result = await printTask(
+        task.title,
+        task.category.name,
+        task.createdAt
+      );
+
       if (result.success) {
-        console.log('Task printed successfully');
+        console.log("Task printed successfully");
       } else {
-        console.error('Printing failed:', result.error);
-        alert('Printing failed: ' + result.error);
+        console.error("Printing failed:", result.error);
+        alert("Printing failed: " + result.error);
       }
     } catch (error) {
-      console.error('Printing error:', error);
-      alert('Printing error: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      console.error("Printing error:", error);
+      alert(
+        "Printing error: " +
+          (error instanceof Error ? error.message : "Unknown error")
+      );
     } finally {
       setIsPrinting(false);
     }
@@ -113,9 +132,9 @@ export default function TodoWireframe({ initialTasks, initialCategories }: TodoW
   const handleDeleteFromHistory = async (id: string) => {
     try {
       await deleteTask(id);
-      setTasks(prev => prev.filter(task => task.id !== id));
+      setTasks((prev) => prev.filter((task) => task.id !== id));
     } catch (error) {
-      console.error('Failed to delete task:', error);
+      console.error("Failed to delete task:", error);
     }
   };
 
@@ -124,34 +143,41 @@ export default function TodoWireframe({ initialTasks, initialCategories }: TodoW
 
     try {
       const category = await createCategory(newCategoryName);
-      setCategories(prev => [...prev, category].sort((a, b) => a.name.localeCompare(b.name)));
+      setCategories((prev) =>
+        [...prev, category].sort((a, b) => a.name.localeCompare(b.name))
+      );
       setSelectedCategoryId(category.id);
       setNewCategoryName("");
       setIsCreatingCategory(false);
     } catch (error) {
-      console.error('Failed to create category:', error);
-      alert('Failed to create category. It might already exist.');
+      console.error("Failed to create category:", error);
+      alert("Failed to create category. It might already exist.");
     }
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
-    if (!confirm('Delete this category? All tasks in this category will also be deleted.')) return;
+    if (
+      !confirm(
+        "Delete this category? All tasks in this category will also be deleted."
+      )
+    )
+      return;
 
     try {
       await deleteCategory(categoryId);
-      setCategories(prev => prev.filter(cat => cat.id !== categoryId));
-      setTasks(prev => prev.filter(task => task.categoryId !== categoryId));
+      setCategories((prev) => prev.filter((cat) => cat.id !== categoryId));
+      setTasks((prev) => prev.filter((task) => task.categoryId !== categoryId));
       if (selectedCategoryId === categoryId) {
         setSelectedCategoryId("");
       }
     } catch (error) {
-      console.error('Failed to delete category:', error);
-      alert('Failed to delete category.');
+      console.error("Failed to delete category:", error);
+      alert("Failed to delete category.");
     }
   };
 
   // Quick task templates based on existing tasks
-  const quickTasks = tasks.slice(0, 4).map(task => task.title);
+  const quickTasks = tasks.slice(0, 4).map((task) => task.title);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 p-6">
@@ -179,7 +205,7 @@ export default function TodoWireframe({ initialTasks, initialCategories }: TodoW
               <div className="text-sm text-amber-600 bg-amber-100 rounded-full px-4 py-2 inline-block">
                 Press{" "}
                 <kbd className="px-3 py-1 bg-white rounded-lg text-xs shadow-sm border border-amber-200">
-                  Ctrl+N
+                  Ctrl+/
                 </kbd>{" "}
                 for super quick access!
               </div>
@@ -195,7 +221,7 @@ export default function TodoWireframe({ initialTasks, initialCategories }: TodoW
                   className="flex-1 text-lg py-4 rounded-2xl border-rose-200 focus:border-rose-400 focus:ring-rose-200"
                   autoFocus
                 />
-                
+
                 {/* Enhanced Category Select */}
                 <div className="w-52">
                   {isCreatingCategory ? (
@@ -229,8 +255,14 @@ export default function TodoWireframe({ initialTasks, initialCategories }: TodoW
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
                         {categories.map((category) => (
-                          <div key={category.id} className="flex items-center justify-between group">
-                            <SelectItem value={category.id} className="rounded-lg flex-1">
+                          <div
+                            key={category.id}
+                            className="flex items-center justify-between group"
+                          >
+                            <SelectItem
+                              value={category.id}
+                              className="rounded-lg flex-1"
+                            >
                               {category.name}
                             </SelectItem>
                             <Button
@@ -269,10 +301,12 @@ export default function TodoWireframe({ initialTasks, initialCategories }: TodoW
                     onClick={handleCreateAndPrint}
                     className="bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
                     size="lg"
-                    disabled={!newTitle.trim() || !selectedCategoryId || isPrinting}
+                    disabled={
+                      !newTitle.trim() || !selectedCategoryId || isPrinting
+                    }
                   >
                     <Printer className="w-5 h-5 mr-2" />
-                    {isPrinting ? 'Printing...' : 'Create & Print'}
+                    {isPrinting ? "Printing..." : "Create & Print"}
                   </Button>
                   <Button
                     variant="outline"
@@ -362,7 +396,7 @@ export default function TodoWireframe({ initialTasks, initialCategories }: TodoW
                           className="text-blue-600 border-blue-200 hover:bg-blue-50 rounded-xl"
                         >
                           <Printer className="w-4 h-4 mr-1" />
-                          {isPrinting ? 'Printing...' : 'Reprint'}
+                          {isPrinting ? "Printing..." : "Reprint"}
                         </Button>
 
                         <Button
@@ -404,7 +438,7 @@ export default function TodoWireframe({ initialTasks, initialCategories }: TodoW
               <span className="flex items-center gap-2">
                 <span>
                   <kbd className="px-3 py-1 bg-white rounded-lg shadow-sm border border-amber-200">
-                    Ctrl+N
+                    Ctrl+/
                   </kbd>{" "}
                   New task
                 </span>

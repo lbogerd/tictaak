@@ -46,7 +46,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## Keyboard Shortcuts
 
-- `Ctrl+N` - Quick access to create new task form
+- `Ctrl+/` - Quick access to create new task form
 
 ## Project Structure
 
