@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TicTaak - Task Printer
+
+A modern web application for creating and printing physical task tickets. Perfect for organizing tasks that need to be completed away from your computer.
+
+## Features
+
+- **Create & Print Tasks**: Generate printable task tickets with categories
+- **Task Categories**: Organize tasks by Personal, Work, Health, Shopping, or Projects
+- **Recent Tasks History**: Reprint previously created tasks
+- **Quick Templates**: Fast access to commonly used task descriptions
+- **Modern UI**: Clean, responsive interface built with Tailwind CSS and Radix UI
+
+## Tech Stack
+
+- **Framework**: Next.js 15 with Turbopack
+- **Frontend**: React 19, TypeScript
+- **Styling**: Tailwind CSS v4
+- **UI Components**: Radix UI primitives
+- **Icons**: Lucide React
+- **Date/Time**: Luxon
+- **Package Manager**: pnpm
 
 ## Getting Started
 
-First, run the development server:
+First, install the dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then, run the development server:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
-## Learn More
+## Usage
 
-To learn more about Next.js, take a look at the following resources:
+1. **Create a Task**: Click "Create & Print Task" to add a new task
+2. **Add Details**: Enter task description and select a category
+3. **Print**: Click "Create & Print" to generate a printable ticket
+4. **Reprint**: Use the Recent Tasks section to reprint previous tasks
+5. **Quick Add**: Use the quick templates for common tasks
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Keyboard Shortcuts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `Ctrl+N` - Quick access to create new task form
 
-## Deploy on Vercel
+## Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+tictaak/
+├── app/                 # Next.js app directory
+├── components/          # React components
+│   ├── ui/             # Reusable UI components
+│   └── todo-wireframe.tsx # Main task management component
+├── lib/                # Utility functions
+└── public/             # Static assets
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Development
+
+This project uses:
+- **ESLint** for code linting
+- **TypeScript** for type safety
+- **Tailwind CSS** for styling
+- **pnpm** for package management
+
+## Scripts
+
+- `pnpm dev` - Start development server with Turbopack
+- `pnpm build` - Build for production
+- `pnpm start` - Start production server
+- `pnpm lint` - Run ESLint
+
+## Contributing
+
+This is a personal task management tool. Feel free to fork and adapt for your own needs.
