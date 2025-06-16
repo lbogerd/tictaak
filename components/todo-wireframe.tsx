@@ -76,11 +76,17 @@ export default function TodoWireframe({
         event.preventDefault();
         setShowNewForm(true);
       }
+
+      // Check for ESC to close form
+      if (event.key === "Escape" && showNewForm) {
+        event.preventDefault();
+        closeForm();
+      }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [showNewForm]);
 
   const handleCreateAndPrint = async () => {
     if (!newTitle.trim() || !selectedCategoryId) return;
@@ -93,12 +99,21 @@ export default function TodoWireframe({
       await handlePrint(task);
 
       // Reset form
-      setNewTitle("");
-      setSelectedCategoryId("");
-      setShowNewForm(false);
+      resetForm();
     } catch (error) {
       console.error("Failed to create task:", error);
     }
+  };
+
+  const closeForm = () => {
+    setShowNewForm(false);
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setNewTitle("");
+    setSelectedCategoryId("");
+    setShowNewForm(false);
   };
 
   const handlePrint = async (task: Task) => {
@@ -310,7 +325,7 @@ export default function TodoWireframe({
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => setShowNewForm(false)}
+                    onClick={closeForm}
                     size="lg"
                     className="rounded-2xl border-amber-200 text-amber-700 hover:bg-amber-50"
                   >
