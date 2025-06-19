@@ -24,6 +24,7 @@ This is a Next.js 15 application called TicTaak - a task printer web app for cre
 - Create and print task tickets with categories
 - Recent tasks history with reprint functionality
 - Quick task templates
+- Does NOT track the status of tasks, this is done with the printed tickets - not in-app
 
 ### Tech Stack
 - Next.js 15 with React 19

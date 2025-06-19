@@ -4,13 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -28,6 +22,8 @@ import {
   Archive,
   Rocket,
   Loader2,
+  Repeat,
+  Calendar,
 } from "lucide-react";
 import { DateTime } from "luxon";
 import {
@@ -37,22 +33,13 @@ import {
   deleteCategory,
 } from "@/lib/actions";
 import { printTask } from "@/lib/printer";
+import { Prisma } from "@prisma/client";
+import RecurringTaskOptions from "./recurring-task-options";
 
-type Category = {
-  id: string;
-  name: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-type Task = {
-  id: string;
-  title: string;
-  categoryId: string;
-  category: Category;
-  createdAt: Date;
-  updatedAt: Date;
-};
+type Category = Prisma.CategoryGetPayload<{}>;
+type Task = Prisma.TaskGetPayload<{
+  include: { category: true };
+}>;
 
 type TodoWireframeProps = {
   initialTasks: Task[];
@@ -71,6 +58,11 @@ export default function TodoWireframe({
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+
+  // Recurring task state
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringType, setRecurringType] = useState<string>("weekly");
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -97,9 +89,32 @@ export default function TodoWireframe({
 
   const handleCreateAndPrint = async () => {
     if (!newTitle.trim() || !selectedCategoryId) return;
+    if (
+      isRecurring &&
+      recurringType === "weekly" &&
+      selectedDays.length === 0
+    ) {
+      alert("Please select at least one day for weekly recurring tasks");
+      return;
+    }
 
     try {
-      const task = await createTask(newTitle, selectedCategoryId);
+      const recurringData = isRecurring
+        ? {
+            isRecurring: true,
+            recurringType,
+            recurringInterval: 1,
+            recurringDays:
+              recurringType === "weekly" ? JSON.stringify(selectedDays) : null,
+            nextPrintDate: calculateNextPrintDate(),
+          }
+        : undefined;
+
+      const task = await createTask(
+        newTitle,
+        selectedCategoryId,
+        recurringData
+      );
       setTasks((prev) => [task, ...prev]);
 
       // Print the task
@@ -112,6 +127,42 @@ export default function TodoWireframe({
     }
   };
 
+  const calculateNextPrintDate = (): Date => {
+    const now = new Date();
+
+    if (recurringType === "weekly" && selectedDays.length > 0) {
+      const today = now.getDay();
+      const sortedDays = selectedDays.sort((a, b) => a - b);
+
+      // Find next day in the current week
+      const nextDay = sortedDays.find((day) => day > today);
+
+      if (nextDay !== undefined) {
+        // Next occurrence is this week
+        const daysUntilNext = nextDay - today;
+        const nextDate = new Date(now);
+        nextDate.setDate(now.getDate() + daysUntilNext);
+        return nextDate;
+      } else {
+        // Next occurrence is next week (first day in the array)
+        const daysUntilNext = 7 - today + sortedDays[0];
+        const nextDate = new Date(now);
+        nextDate.setDate(now.getDate() + daysUntilNext);
+        return nextDate;
+      }
+    } else if (recurringType === "daily") {
+      // Next occurrence is tomorrow
+      const nextDate = new Date(now);
+      nextDate.setDate(now.getDate() + 1);
+      return nextDate;
+    }
+
+    // Default to tomorrow
+    const nextDate = new Date(now);
+    nextDate.setDate(now.getDate() + 1);
+    return nextDate;
+  };
+
   const closeForm = () => {
     setShowNewForm(false);
     resetForm();
@@ -121,6 +172,9 @@ export default function TodoWireframe({
     setNewTitle("");
     setSelectedCategoryId("");
     setShowNewForm(false);
+    setIsRecurring(false);
+    setRecurringType("weekly");
+    setSelectedDays([]);
   };
 
   const handlePrint = async (task: Task) => {
@@ -199,7 +253,18 @@ export default function TodoWireframe({
   };
 
   // Quick task templates based on existing tasks
-  const quickTasks = tasks.slice(0, 4).map((task) => task.title);
+  const quickTasks = tasks
+    .reduce((unique, task) => {
+      const existingIndex = unique.findIndex((t) => t.title === task.title);
+      if (existingIndex === -1) {
+        unique.push(task);
+      } else if (task.createdAt > unique[existingIndex].createdAt) {
+        unique[existingIndex] = task;
+      }
+      return unique;
+    }, [] as Task[])
+    .slice(0, 4)
+    .map((task) => task.title);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 p-6">
@@ -316,6 +381,16 @@ export default function TodoWireframe({
                   )}
                 </div>
               </div>
+
+              {/* Recurring Task Options */}
+              <RecurringTaskOptions
+                isRecurring={isRecurring}
+                setIsRecurring={setIsRecurring}
+                recurringType={recurringType}
+                setRecurringType={setRecurringType}
+                selectedDays={selectedDays}
+                setSelectedDays={setSelectedDays}
+              />
 
               <div className="flex items-center justify-between">
                 <div className="flex gap-4">
