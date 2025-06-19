@@ -4,7 +4,13 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -21,6 +27,7 @@ import {
   Ticket,
   Archive,
   Rocket,
+  Loader2,
 } from "lucide-react";
 import { DateTime } from "luxon";
 import {
@@ -383,62 +390,70 @@ export default function TodoWireframe({
                   key={task.id}
                   className="hover:shadow-md transition-all duration-300 transform hover:scale-[1.01] rounded-2xl border-rose-100 bg-gradient-to-r from-white to-rose-50/50"
                 >
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="flex items-center gap-4">
-                          <span className="text-lg text-amber-800 font-medium">
-                            {task.title}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className="text-xs rounded-full border-rose-200 text-rose-700 bg-rose-50"
-                          >
-                            {task.category.name}
-                          </Badge>
-                          <span className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
-                            {DateTime.fromJSDate(task.createdAt).toRelative()}
-                          </span>
-                        </div>
-                      </div>
+                  <CardHeader className="flex flex-col sm:flex-row">
+                    <CardTitle className="text-xl text-amber-800">
+                      {task.title}
+                    </CardTitle>
 
-                      <div className="flex items-center gap-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePrint(task)}
-                          disabled={isPrinting}
-                          className="text-blue-600 border-blue-200 hover:bg-blue-50 rounded-xl"
-                        >
-                          <Printer className="w-4 h-4 mr-1" />
-                          {isPrinting ? "Printing..." : "Reprint"}
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setNewTitle(task.title);
-                            setSelectedCategoryId(task.categoryId);
-                            setShowNewForm(true);
-                          }}
-                          className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 rounded-xl"
-                        >
-                          <Edit3 className="w-4 h-4 mr-1" />
-                          Edit & Print
-                        </Button>
-
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteFromHistory(task.id)}
-                          className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                    <div className="flex gap-1 sm:self-center sm:ml-auto">
+                      <Badge
+                        variant="outline"
+                        className="text-xs rounded-full border-rose-200 text-rose-700 bg-rose-50"
+                      >
+                        {task.category.name}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className="text-xs rounded-full border-amber-200 text-amber-700 bg-amber-50 capitalize"
+                      >
+                        {DateTime.fromJSDate(
+                          task.createdAt
+                        ).toRelativeCalendar()}
+                      </Badge>
                     </div>
-                  </CardContent>
+                  </CardHeader>
+
+                  <hr className="border-rose-100 w-full h-px sm:hidden" />
+
+                  <CardFooter className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePrint(task)}
+                      disabled={isPrinting}
+                      className="w-full sm:w-auto text-blue-600 border-blue-200 hover:bg-blue-50 rounded-xl"
+                    >
+                      {isPrinting ? (
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      ) : (
+                        <Printer className="w-4 h-4 mr-1" />
+                      )}
+                      {isPrinting ? "Printing..." : "Reprint"}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setNewTitle(task.title);
+                        setSelectedCategoryId(task.categoryId);
+                        setShowNewForm(true);
+                      }}
+                      className="w-full sm:w-auto text-emerald-600 border-emerald-200 hover:bg-emerald-50 rounded-xl"
+                    >
+                      <Edit3 className="w-4 h-4 mr-1" />
+                      Edit & Print
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteFromHistory(task.id)}
+                      className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl ml-auto"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </CardFooter>
                 </Card>
               ))}
             </div>
