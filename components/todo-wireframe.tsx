@@ -3,8 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -12,16 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Plus,
-  X,
-  Ticket,
-  Archive,
-  Rocket,
-  Loader2,
-  Printer,
-} from "lucide-react";
-import { DateTime } from "luxon";
+import { Plus, X, Ticket, Archive, Rocket, Printer } from "lucide-react";
 import {
   createTask,
   deleteTask,
@@ -341,7 +330,7 @@ export default function TodoWireframe({
                       <SelectContent className="rounded-xl">
                         {categories.map((category) => (
                           <div
-                            key={category.id}
+                            key={`category-${category.id}`}
                             className="flex items-center justify-between group"
                           >
                             <SelectItem
@@ -392,19 +381,7 @@ export default function TodoWireframe({
 
               <div className="flex items-center justify-between">
                 <div className="flex gap-4">
-                  <Button
-                    onClick={() => handleCreate(true)}
-                    className="bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
-                    size="lg"
-                    disabled={
-                      !newTitle.trim() || !selectedCategoryId || isPrinting
-                    }
-                  >
-                    <Printer className="w-5 h-5 mr-2" />
-                    {isPrinting ? "Printing..." : "Create & Print"}
-                  </Button>
-
-                  {isRecurring && (
+                  {isRecurring ? (
                     <Button
                       onClick={() => handleCreate(false)}
                       className="bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
@@ -415,6 +392,18 @@ export default function TodoWireframe({
                     >
                       <Plus className="w-5 h-5 mr-2" />
                       Create
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => handleCreate(true)}
+                      className="bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+                      size="lg"
+                      disabled={
+                        !newTitle.trim() || !selectedCategoryId || isPrinting
+                      }
+                    >
+                      <Printer className="w-5 h-5 mr-2" />
+                      {isPrinting ? "Printing..." : "Create & Print"}
                     </Button>
                   )}
 
@@ -440,7 +429,7 @@ export default function TodoWireframe({
                   <div className="flex gap-3 flex-wrap">
                     {quickTasks.map((title) => (
                       <Button
-                        key={title}
+                        key={`quick-task-${title}`}
                         variant="outline"
                         size="sm"
                         onClick={() => setNewTitle(title)}
@@ -480,7 +469,7 @@ export default function TodoWireframe({
             <div className="space-y-4">
               {tasks.map((task) => (
                 <TaskCard
-                  key={task.id}
+                  key={`recent-task-${task.id}`}
                   task={task}
                   onPrint={handlePrint}
                   onEdit={(task) => {
