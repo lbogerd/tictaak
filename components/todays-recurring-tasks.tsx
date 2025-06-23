@@ -126,7 +126,7 @@ export default function TodaysRecurringTasks({
     }
   };
 
-  const getRecurringBadges = (task: Task, showNextDate = true) => {
+  const getRecurringBadges = (task: Task) => {
     const badges = [];
 
     // Recurring type badge
@@ -142,20 +142,6 @@ export default function TodaysRecurringTasks({
           ` • ${getDayNames(task.recurringDays)}`}
       </Badge>
     );
-
-    // Next print date badge (only for today's tasks)
-    if (showNextDate && task.nextPrintDate) {
-      badges.push(
-        <Badge
-          key="next-print"
-          variant="outline"
-          className="text-xs rounded-full border-indigo-200 text-indigo-700 bg-indigo-50 flex items-center gap-1"
-        >
-          <Clock className="w-3 h-3" />
-          Next: {DateTime.fromJSDate(task.nextPrintDate).toFormat("EEE, MMM d")}
-        </Badge>
-      );
-    }
 
     return badges;
   };
@@ -306,7 +292,7 @@ export default function TodaysRecurringTasks({
                           onPrint={handlePrint}
                           isPrinting={printingTaskId === task.id}
                           variant="recurring"
-                          additionalBadges={getRecurringBadges(task, false)}
+                          additionalBadges={getRecurringBadges(task)}
                           onDelete={handleDelete}
                         />
                       ))}

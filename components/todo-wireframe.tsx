@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, X, Ticket, Archive, Rocket, Printer } from "lucide-react";
+import { Plus, X, Ticket, Archive, Printer } from "lucide-react";
 import {
   createTask,
   deleteTask,
@@ -239,20 +239,6 @@ export default function TodoWireframe({
     }
   };
 
-  // Quick task templates based on existing tasks
-  const quickTasks = tasks
-    .reduce((unique, task) => {
-      const existingIndex = unique.findIndex((t) => t.title === task.title);
-      if (existingIndex === -1) {
-        unique.push(task);
-      } else if (task.createdAt > unique[existingIndex].createdAt) {
-        unique[existingIndex] = task;
-      }
-      return unique;
-    }, [] as Task[])
-    .slice(0, 4)
-    .map((task) => task.title);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 p-6">
       <div className="max-w-4xl mx-auto">
@@ -418,29 +404,6 @@ export default function TodoWireframe({
                   </Button>
                 </div>
               </div>
-
-              {/* Quick Reuse Section */}
-              {quickTasks.length > 0 && (
-                <div className="pt-6 border-t border-rose-100">
-                  <p className="text-sm text-amber-700 mb-4 font-medium flex items-center gap-1">
-                    <Rocket className="w-4 h-4 mr-2" />
-                    Quick reuse (click to use):
-                  </p>
-                  <div className="flex gap-3 flex-wrap">
-                    {quickTasks.map((title) => (
-                      <Button
-                        key={`quick-task-${title}`}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setNewTitle(title)}
-                        className="text-sm hover:bg-rose-50 hover:border-rose-300 rounded-xl border-rose-200 text-rose-700 transition-all duration-200"
-                      >
-                        {title}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>
