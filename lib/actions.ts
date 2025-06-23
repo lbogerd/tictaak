@@ -163,6 +163,31 @@ export async function getTodaysDueTasks() {
   });
 }
 
+// Get all upcoming recurring tasks (next 30 days)
+export async function getUpcomingRecurringTasks() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const thirtyDaysFromNow = new Date(today);
+  thirtyDaysFromNow.setDate(today.getDate() + 30);
+
+  return await db.task.findMany({
+    where: {
+      isRecurring: true,
+      isActive: true,
+      nextPrintDate: {
+        gte: today,
+        lt: thirtyDaysFromNow,
+      },
+    },
+    include: {
+      category: true,
+    },
+    orderBy: {
+      nextPrintDate: "asc",
+    },
+  });
+}
+
 // Update task after printing (for recurring tasks)
 export async function updateTaskAfterPrint(taskId: string) {
   const task = await db.task.findUnique({

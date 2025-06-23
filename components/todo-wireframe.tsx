@@ -14,16 +14,12 @@ import {
 } from "@/components/ui/select";
 import {
   Plus,
-  Printer,
-  Edit3,
   X,
-  Trash2,
   Ticket,
   Archive,
   Rocket,
   Loader2,
-  Repeat,
-  Calendar,
+  Printer,
 } from "lucide-react";
 import { DateTime } from "luxon";
 import {
@@ -35,6 +31,8 @@ import {
 import { printTask } from "@/lib/printer";
 import { Prisma } from "@prisma/client";
 import RecurringTaskOptions from "./recurring-task-options";
+import TaskCard from "./task-card";
+import TodaysRecurringTasks from "./todays-recurring-tasks";
 
 type Category = Prisma.CategoryGetPayload<{}>;
 type Task = Prisma.TaskGetPayload<{
@@ -87,7 +85,7 @@ export default function TodoWireframe({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [showNewForm]);
 
-  const handleCreateAndPrint = async () => {
+  const handleCreate = async (print: boolean = true) => {
     if (!newTitle.trim() || !selectedCategoryId) return;
     if (
       isRecurring &&
@@ -118,7 +116,7 @@ export default function TodoWireframe({
       setTasks((prev) => [task, ...prev]);
 
       // Print the task
-      await handlePrint(task);
+      if (print) await handlePrint(task);
 
       // Reset form
       resetForm();
@@ -304,7 +302,7 @@ export default function TodoWireframe({
                   placeholder="What lovely thing needs to be done? 💫"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleCreateAndPrint()}
+                  onKeyDown={(e) => e.key === "Enter" && handleCreate()}
                   className="flex-1 text-lg py-4 rounded-2xl border-rose-200 focus:border-rose-400 focus:ring-rose-200"
                   autoFocus
                 />
@@ -395,7 +393,7 @@ export default function TodoWireframe({
               <div className="flex items-center justify-between">
                 <div className="flex gap-4">
                   <Button
-                    onClick={handleCreateAndPrint}
+                    onClick={() => handleCreate(true)}
                     className="bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
                     size="lg"
                     disabled={
@@ -405,6 +403,21 @@ export default function TodoWireframe({
                     <Printer className="w-5 h-5 mr-2" />
                     {isPrinting ? "Printing..." : "Create & Print"}
                   </Button>
+
+                  {isRecurring && (
+                    <Button
+                      onClick={() => handleCreate(false)}
+                      className="bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+                      size="lg"
+                      disabled={
+                        !newTitle.trim() || !selectedCategoryId || isPrinting
+                      }
+                    >
+                      <Plus className="w-5 h-5 mr-2" />
+                      Create
+                    </Button>
+                  )}
+
                   <Button
                     variant="outline"
                     onClick={closeForm}
@@ -443,6 +456,11 @@ export default function TodoWireframe({
           )}
         </div>
 
+        {/* Today's Recurring Tasks */}
+        <TodaysRecurringTasks
+          onTaskPrinted={(task) => setTasks((prev) => [task, ...prev])}
+        />
+
         {/* Recent Tasks - For Reprinting */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-rose-100 p-8">
           <h2 className="text-2xl font-bold text-amber-800 mb-3 flex items-center gap-2">
@@ -461,75 +479,19 @@ export default function TodoWireframe({
           ) : (
             <div className="space-y-4">
               {tasks.map((task) => (
-                <Card
+                <TaskCard
                   key={task.id}
-                  className="hover:shadow-md transition-all duration-300 transform hover:scale-[1.01] rounded-2xl border-rose-100 bg-gradient-to-r from-white to-rose-50/50"
-                >
-                  <CardHeader className="flex flex-col sm:flex-row">
-                    <CardTitle className="text-xl text-amber-800">
-                      {task.title}
-                    </CardTitle>
-
-                    <div className="flex gap-1 sm:self-center sm:ml-auto">
-                      <Badge
-                        variant="outline"
-                        className="text-xs rounded-full border-rose-200 text-rose-700 bg-rose-50"
-                      >
-                        {task.category.name}
-                      </Badge>
-                      <Badge
-                        variant="outline"
-                        className="text-xs rounded-full border-amber-200 text-amber-700 bg-amber-50 capitalize"
-                      >
-                        {DateTime.fromJSDate(
-                          task.createdAt
-                        ).toRelativeCalendar()}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-
-                  <hr className="border-rose-100 w-full h-px sm:hidden" />
-
-                  <CardFooter className="flex flex-col sm:flex-row sm:items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePrint(task)}
-                      disabled={isPrinting}
-                      className="w-full sm:w-auto text-blue-600 border-blue-200 hover:bg-blue-50 rounded-xl"
-                    >
-                      {isPrinting ? (
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                      ) : (
-                        <Printer className="w-4 h-4 mr-1" />
-                      )}
-                      {isPrinting ? "Printing..." : "Reprint"}
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setNewTitle(task.title);
-                        setSelectedCategoryId(task.categoryId);
-                        setShowNewForm(true);
-                      }}
-                      className="w-full sm:w-auto text-emerald-600 border-emerald-200 hover:bg-emerald-50 rounded-xl"
-                    >
-                      <Edit3 className="w-4 h-4 mr-1" />
-                      Edit & Print
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteFromHistory(task.id)}
-                      className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl ml-auto"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </CardFooter>
-                </Card>
+                  task={task}
+                  onPrint={handlePrint}
+                  onEdit={(task) => {
+                    setNewTitle(task.title);
+                    setSelectedCategoryId(task.categoryId);
+                    setShowNewForm(true);
+                  }}
+                  onDelete={handleDeleteFromHistory}
+                  isPrinting={isPrinting}
+                  variant="recent"
+                />
               ))}
             </div>
           )}
