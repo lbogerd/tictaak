@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,9 +10,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, X, Ticket, Archive, Printer } from "lucide-react";
+import {
+  Plus,
+  X,
+  Ticket,
+  Archive,
+  Printer,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import {
   createTask,
+  getTasks,
   deleteTask,
   createCategory,
   deleteCategory,
@@ -23,33 +32,74 @@ import RecurringTaskOptions from "./recurring-task-options";
 import TaskCard from "./task-card";
 import TodaysRecurringTasks from "./todays-recurring-tasks";
 
-type Category = Prisma.CategoryGetPayload<{}>;
+type Category = Prisma.CategoryGetPayload<Record<string, never>>;
 type Task = Prisma.TaskGetPayload<{
   include: { category: true };
 }>;
 
 type TodoWireframeProps = {
-  initialTasks: Task[];
+  initialTasksData: {
+    tasks: Task[];
+    totalCount: number;
+    currentPage: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
   initialCategories: Category[];
 };
 
 export default function TodoWireframe({
-  initialTasks,
+  initialTasksData,
   initialCategories,
 }: TodoWireframeProps) {
   const [showNewForm, setShowNewForm] = useState(false);
-  const [tasks, setTasks] = useState(initialTasks);
+  const [tasks, setTasks] = useState(initialTasksData.tasks);
+  const [tasksMeta, setTasksMeta] = useState({
+    totalCount: initialTasksData.totalCount,
+    currentPage: initialTasksData.currentPage,
+    totalPages: initialTasksData.totalPages,
+    hasNextPage: initialTasksData.hasNextPage,
+    hasPreviousPage: initialTasksData.hasPreviousPage,
+  });
   const [categories, setCategories] = useState(initialCategories);
   const [newTitle, setNewTitle] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isLoadingTasks, startTasksTransition] = useTransition();
 
   // Recurring task state
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringType, setRecurringType] = useState<string>("weekly");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+
+  // Load tasks with pagination
+  const loadTasks = async (page: number = 1) => {
+    startTasksTransition(async () => {
+      try {
+        const result = await getTasks({
+          limit: 10,
+          page,
+        });
+        setTasks(result.tasks);
+        setTasksMeta({
+          totalCount: result.totalCount,
+          currentPage: result.currentPage,
+          totalPages: result.totalPages,
+          hasNextPage: result.hasNextPage,
+          hasPreviousPage: result.hasPreviousPage,
+        });
+      } catch (error) {
+        console.error("Failed to load tasks:", error);
+      }
+    });
+  };
+
+  const handlePageChange = async (newPage: number) => {
+    await loadTasks(newPage);
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -414,7 +464,10 @@ export default function TodoWireframe({
         />
 
         {/* Recent Tasks - For Reprinting */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-rose-100 p-8">
+        <div
+          id="recent-tasks"
+          className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-rose-100 p-8"
+        >
           <h2 className="text-2xl font-bold text-amber-800 mb-3 flex items-center gap-2">
             <Archive className="w-6 h-6" />
             Your Recent Tasks
@@ -429,25 +482,64 @@ export default function TodoWireframe({
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {tasks.map((task) => (
-                <TaskCard
-                  key={`recent-task-${task.id}`}
-                  task={task}
-                  onPrint={handlePrint}
-                  onEdit={(task) => {
-                    setNewTitle(task.title);
-                    setSelectedCategoryId(task.categoryId);
-                    setShowNewForm(true);
-                    // scroll to the top of the page
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  onDelete={handleDeleteFromHistory}
-                  isPrinting={isPrinting}
-                  variant="recent"
-                />
-              ))}
-            </div>
+            <>
+              <div className="space-y-4">
+                {tasks.map((task) => (
+                  <TaskCard
+                    key={`recent-task-${task.id}`}
+                    task={task}
+                    onPrint={handlePrint}
+                    onEdit={(task) => {
+                      setNewTitle(task.title);
+                      setSelectedCategoryId(task.categoryId);
+                      setShowNewForm(true);
+                      // scroll to the top of the page
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    onDelete={handleDeleteFromHistory}
+                    isPrinting={isPrinting}
+                    variant="recent"
+                  />
+                ))}
+              </div>
+              {tasksMeta.totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between">
+                  <div className="text-sm text-amber-600">
+                    Showing {tasks.length * tasksMeta.currentPage} of{" "}
+                    {tasksMeta.totalCount} tasks
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handlePageChange(tasksMeta.currentPage - 1)
+                      }
+                      disabled={!tasksMeta.hasPreviousPage || isLoadingTasks}
+                      className="rounded-xl border-rose-200 text-amber-700 hover:bg-amber-50"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Previous
+                    </Button>
+                    <span className="text-sm text-amber-600 px-4">
+                      Page {tasksMeta.currentPage} of {tasksMeta.totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handlePageChange(tasksMeta.currentPage + 1)
+                      }
+                      disabled={!tasksMeta.hasNextPage || isLoadingTasks}
+                      className="rounded-xl border-rose-200 text-amber-700 hover:bg-amber-50"
+                    >
+                      Next
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 

@@ -66,9 +66,9 @@ export default function TaskCard({
           <Badge
             variant="outline"
             className="text-xs rounded-full border-amber-200 text-amber-700 bg-amber-50 capitalize"
-            title={DateTime.fromJSDate(task.createdAt).toLocaleString(
-              DateTime.DATE_MED
-            )}
+            title={DateTime.fromJSDate(task.createdAt)
+              .setLocale("nl-NL")
+              .toLocaleString(DateTime.DATE_MED)}
           >
             {DateTime.fromJSDate(task.createdAt).toRelativeCalendar()}
           </Badge>

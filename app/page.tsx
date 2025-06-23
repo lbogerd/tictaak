@@ -6,10 +6,10 @@ export default async function Page() {
   await initializeDefaultCategories();
   
   // Fetch data
-  const [tasks, categories] = await Promise.all([
-    getTasks(),
+  const [tasksData, categories] = await Promise.all([
+    getTasks({ limit: 10, page: 1 }),
     getCategories()
   ]);
 
-  return <TodoWireframe initialTasks={tasks} initialCategories={categories} />;
+  return <TodoWireframe initialTasksData={tasksData} initialCategories={categories} />;
 }

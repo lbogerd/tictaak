@@ -182,33 +182,35 @@ export default function TodaysRecurringTasks({
 
   return (
     <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-purple-100 p-8 mb-8">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-purple-800 flex items-center gap-2">
-          <Repeat className="w-6 h-6" />
-          Today's Recurring Tasks
-          {dueTasks.length > 0 && (
-            <Badge
-              variant="outline"
-              className="ml-2 bg-purple-50 border-purple-200 text-purple-700"
-            >
-              {dueTasks.length} due
-            </Badge>
-          )}
-        </h2>
+      <div className="flex flex-col space-y-4 mb-6 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+        <div className="flex flex-col space-y-2 sm:space-y-0">
+          <h2 className="text-xl sm:text-2xl font-bold text-purple-800 flex items-center gap-2 flex-wrap">
+            <Repeat className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+            <span className="min-w-0">Today's Recurring Tasks</span>
+            {dueTasks.length > 0 && (
+              <Badge
+                variant="outline"
+                className="bg-purple-50 border-purple-200 text-purple-700 text-xs sm:text-sm"
+              >
+                {dueTasks.length} due
+              </Badge>
+            )}
+          </h2>
+        </div>
 
         <Button
           variant="ghost"
           size="sm"
           onClick={handleToggleUpcoming}
-          className="text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded-xl"
+          className="text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded-xl w-full sm:w-auto text-sm sm:text-base justify-center sm:justify-start"
           id="view-all-upcoming"
         >
-          <Calendar className="w-4 h-4 mr-2" />
-          View All Upcoming
+          <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
+          <span className="truncate">View All Upcoming</span>
           {showUpcoming ? (
-            <ChevronUp className="w-4 h-4 ml-1" />
+            <ChevronUp className="w-4 h-4 ml-1 flex-shrink-0" />
           ) : (
-            <ChevronDown className="w-4 h-4 ml-1" />
+            <ChevronDown className="w-4 h-4 ml-1 flex-shrink-0" />
           )}
         </Button>
       </div>

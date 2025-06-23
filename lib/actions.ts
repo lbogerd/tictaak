@@ -32,15 +32,51 @@ export async function createTask(
   return task;
 }
 
-export async function getTasks() {
-  return await db.task.findMany({
-    include: {
-      category: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+export async function getTasks(options?: {
+  limit?: number;
+  page?: number;
+  search?: string;
+  categoryId?: string;
+}) {
+  const { limit = 10, page = 1, search, categoryId } = options || {};
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.TaskWhereInput = {};
+
+  if (search) {
+    where.title = {
+      contains: search,
+      mode: "insensitive",
+    };
+  }
+
+  if (categoryId) {
+    where.categoryId = categoryId;
+  }
+
+  const [tasks, totalCount] = await Promise.all([
+    db.task.findMany({
+      where,
+      include: {
+        category: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take: limit,
+    }),
+    db.task.count({ where }),
+  ]);
+
+  return {
+    tasks,
+    totalCount,
+    currentPage: page,
+    totalPages: Math.ceil(totalCount / limit),
+    hasNextPage: page < Math.ceil(totalCount / limit),
+    hasPreviousPage: page > 1,
+  };
 }
 
 export async function deleteTask(id: string) {
