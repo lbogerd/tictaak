@@ -62,7 +62,7 @@ export default function TaskCard({
           >
             {task.category.name}
           </Badge>
-          
+
           <Badge
             variant="outline"
             className="text-xs rounded-full border-amber-200 text-amber-700 bg-amber-50 capitalize"
@@ -95,7 +95,11 @@ export default function TaskCard({
           ) : (
             <Printer className="w-4 h-4 mr-1" />
           )}
-          {isPrinting ? "Printing..." : variant === "recurring" ? "Print Now" : "Reprint"}
+          {isPrinting
+            ? "Printing..."
+            : variant === "recurring"
+            ? "Print Now"
+            : "Reprint"}
         </Button>
 
         {onEdit && (

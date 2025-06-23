@@ -476,6 +476,8 @@ export default function TodoWireframe({
                     setNewTitle(task.title);
                     setSelectedCategoryId(task.categoryId);
                     setShowNewForm(true);
+                    // scroll to the top of the page
+                    window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
                   onDelete={handleDeleteFromHistory}
                   isPrinting={isPrinting}
