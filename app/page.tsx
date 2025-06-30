@@ -1,4 +1,4 @@
-import TodoWireframe from "../components/todo-wireframe";
+import TodoPage from "../components/todo-page";
 import { getTasks, getCategories, initializeDefaultCategories } from "@/lib/actions";
 
 export default async function Page() {
@@ -11,5 +11,5 @@ export default async function Page() {
     getCategories()
   ]);
 
-  return <TodoWireframe initialTasksData={tasksData} initialCategories={categories} />;
+  return <TodoPage initialTasksData={tasksData} initialCategories={categories} />;
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useState, useEffect, useTransition, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,23 +10,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Plus,
-  X,
-  Ticket,
-  Archive,
-  Printer,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import {
-  createTask,
-  getTasks,
-  deleteTask,
   createCategory,
+  createTask,
   deleteCategory,
+  deleteTask,
+  getTasks,
 } from "@/lib/actions";
 import { printTask } from "@/lib/printer";
 import { Prisma } from "@prisma/client";
+import {
+  Archive,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Printer,
+  Ticket,
+  X,
+} from "lucide-react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import RecurringTaskOptions from "./recurring-task-options";
 import TaskCard from "./task-card";
 import TodaysRecurringTasks from "./todays-recurring-tasks";
@@ -37,7 +37,7 @@ type Task = Prisma.TaskGetPayload<{
   include: { category: true };
 }>;
 
-type TodoWireframeProps = {
+type TodoPageProps = {
   initialTasksData: {
     tasks: Task[];
     totalCount: number;
@@ -49,10 +49,10 @@ type TodoWireframeProps = {
   initialCategories: Category[];
 };
 
-export default function TodoWireframe({
+export default function TodoPage({
   initialTasksData,
   initialCategories,
-}: TodoWireframeProps) {
+}: TodoPageProps) {
   const [showNewForm, setShowNewForm] = useState(false);
   const [tasks, setTasks] = useState(initialTasksData.tasks);
   const [tasksMeta, setTasksMeta] = useState({
@@ -152,13 +152,13 @@ export default function TodoWireframe({
     try {
       const recurringData = isRecurring
         ? {
-            isRecurring: true,
-            recurringType,
-            recurringInterval: 1,
-            recurringDays:
-              recurringType === "weekly" ? JSON.stringify(selectedDays) : null,
-            nextPrintDate: calculateNextPrintDate(),
-          }
+          isRecurring: true,
+          recurringType,
+          recurringInterval: 1,
+          recurringDays:
+            recurringType === "weekly" ? JSON.stringify(selectedDays) : null,
+          nextPrintDate: calculateNextPrintDate(),
+        }
         : undefined;
 
       const task = await createTask(
@@ -231,7 +231,7 @@ export default function TodoWireframe({
       console.error("Printing error:", error);
       alert(
         "Printing error: " +
-          (error instanceof Error ? error.message : "Unknown error")
+        (error instanceof Error ? error.message : "Unknown error")
       );
     } finally {
       setIsPrinting(false);
