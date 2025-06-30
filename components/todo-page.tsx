@@ -318,18 +318,18 @@ export default function TodoPage({
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col md:flex-row items-center gap-4">
                 <Input
-                  placeholder="What lovely thing needs to be done? 💫"
+                  placeholder="What needs to be done?"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                  className="flex-1 text-lg py-4 rounded-2xl border-rose-200 focus:border-rose-400 focus:ring-rose-200"
+                  className="flex-1 md:text-lg py-2 md:py-4 rounded-2xl border-rose-200 focus:border-rose-400 focus:ring-rose-200"
                   autoFocus
                 />
 
                 {/* Enhanced Category Select */}
-                <div className="w-52">
+                <div className="w-full md:w-52">
                   {isCreatingCategory ? (
                     <div className="flex gap-2">
                       <Input
@@ -345,7 +345,6 @@ export default function TodoPage({
                       />
                       <Button
                         onClick={handleCreateCategory}
-                        size="sm"
                         className="rounded-xl"
                       >
                         Add
@@ -356,7 +355,7 @@ export default function TodoPage({
                       value={selectedCategoryId}
                       onValueChange={setSelectedCategoryId}
                     >
-                      <SelectTrigger className="rounded-2xl border-rose-200 focus:border-rose-400">
+                      <SelectTrigger className="rounded-2xl py-1 md:py-2 w-full md:w-auto border-rose-200 focus:border-rose-400">
                         <SelectValue placeholder="Choose category 🏷️" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
@@ -411,8 +410,8 @@ export default function TodoPage({
                 setSelectedDays={setSelectedDays}
               />
 
-              <div className="flex items-center justify-between">
-                <div className="flex gap-4">
+              <div className="flex flex-col md:flex-row items-center justify-between">
+                <div className="flex gap-4 w-full md:w-auto flex-col md:flex-row">
                   {isRecurring ? (
                     <Button
                       onClick={() => handleCreate(false)}
@@ -540,7 +539,7 @@ export default function TodoPage({
         </div>
 
         {/* Footer Info */}
-        <div className="mt-8 text-center text-sm text-amber-600">
+        <div className="md:block hidden mt-8 text-center text-sm text-amber-600">
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl px-6 py-4 inline-block border border-rose-100">
             <div className="flex items-center justify-center gap-2">
               ⌨️ Keyboard shortcuts:{" "}

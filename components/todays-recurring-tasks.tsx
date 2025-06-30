@@ -1,15 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Repeat,
-  Clock,
-  Loader2,
-  ChevronDown,
-  ChevronUp,
-  Calendar,
-} from "lucide-react";
-import { DateTime } from "luxon";
+import { Button } from "@/components/ui/button";
 import {
   deleteTask,
   getTodaysDueTasks,
@@ -18,6 +8,16 @@ import {
 } from "@/lib/actions";
 import { printTask } from "@/lib/printer";
 import { Prisma } from "@prisma/client";
+import {
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Loader2,
+  Repeat,
+} from "lucide-react";
+import { DateTime } from "luxon";
+import { useEffect, useState } from "react";
 import TaskCard from "./task-card";
 
 type Task = Prisma.TaskGetPayload<{
@@ -103,7 +103,7 @@ export default function TodaysRecurringTasks({
       console.error("Printing error:", error);
       alert(
         "Printing error: " +
-          (error instanceof Error ? error.message : "Unknown error")
+        (error instanceof Error ? error.message : "Unknown error")
       );
     } finally {
       setPrintingTaskId(null);
@@ -214,7 +214,7 @@ export default function TodaysRecurringTasks({
       </div>
 
       {dueTasks.length === 0 ? (
-        <div className="text-center py-8 text-purple-600">
+        <div className="text-center py-4 md:py-8 text-purple-600">
           <div className="text-4xl mb-4">✨</div>
           <p className="text-lg">No recurring tasks due today!</p>
           <p className="text-sm bg-purple-50 rounded-2xl px-6 py-3 inline-block mt-2">
