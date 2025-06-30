@@ -7,8 +7,10 @@
   },
   "scripts": {
     "dev": "next dev --turbopack",
-    "dev:full": "concurrently \"pnpm run dev\" \"pnpx prisma dev\"",
+    "dev:db": "pnpx prisma dev",
+    "dev:full": "concurrently \"pnpm run dev\" \"pnpm run dev:db\"",
     "dev:share": "ngrok http 3000",
+    "dev:init": "pnpm install && pnpx prisma db push && pnpx prisma generate",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
