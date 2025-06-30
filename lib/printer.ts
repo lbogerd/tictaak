@@ -6,15 +6,11 @@ import {
   CharacterSet,
 } from "node-thermal-printer";
 
-export async function printTask(
-  title: string,
-  category: string,
-  createdAt: Date
-) {
+export async function printTask(title: string, category: string) {
   try {
     const printerUrl = process.env.PRINTER_URL || "tcp://192.168.50.195:9100";
 
-    let printer = new ThermalPrinter({
+    const printer = new ThermalPrinter({
       type: PrinterTypes.EPSON,
       interface: printerUrl,
       characterSet: CharacterSet.PC437_USA,
@@ -24,7 +20,7 @@ export async function printTask(
     });
 
     // Check if printer is connected
-    let isConnected = await printer.isPrinterConnected();
+    const isConnected = await printer.isPrinterConnected();
     if (!isConnected) {
       throw new Error("Printer not connected");
     }

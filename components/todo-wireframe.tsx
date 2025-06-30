@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useTransition } from "react";
+import React, { useState, useEffect, useTransition, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -101,6 +101,20 @@ export default function TodoWireframe({
     await loadTasks(newPage);
   };
 
+  const resetForm = useCallback(() => {
+    setNewTitle("");
+    setSelectedCategoryId("");
+    setShowNewForm(false);
+    setIsRecurring(false);
+    setRecurringType("weekly");
+    setSelectedDays([]);
+  }, []);
+
+  const closeForm = useCallback(() => {
+    setShowNewForm(false);
+    resetForm();
+  }, [resetForm]);
+
   // Keyboard shortcuts
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -122,7 +136,7 @@ export default function TodoWireframe({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showNewForm]);
+  }, [closeForm, showNewForm]);
 
   const handleCreate = async (print: boolean = true) => {
     if (!newTitle.trim() || !selectedCategoryId) return;
@@ -200,30 +214,12 @@ export default function TodoWireframe({
     return nextDate;
   };
 
-  const closeForm = () => {
-    setShowNewForm(false);
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setNewTitle("");
-    setSelectedCategoryId("");
-    setShowNewForm(false);
-    setIsRecurring(false);
-    setRecurringType("weekly");
-    setSelectedDays([]);
-  };
-
   const handlePrint = async (task: Task) => {
     if (isPrinting) return;
 
     try {
       setIsPrinting(true);
-      const result = await printTask(
-        task.title,
-        task.category.name,
-        task.createdAt
-      );
+      const result = await printTask(task.title, task.category.name);
 
       if (result.success) {
         console.log("Task printed successfully");
