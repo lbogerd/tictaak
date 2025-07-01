@@ -82,17 +82,17 @@ export interface WrapOptions {
  * without breaking words—unless a word is longer than `chunkAfter`,
  * in which case it’s chunked and hyphenated.
  */
-export function wrapForThermalPrinter(
+export async function wrapForThermalPrinter(
   text: string,
   { maxWidth = 48, chunkAfter = maxWidth - 1 }: WrapOptions = {}
-): string {
+): Promise<string> {
   // Sanity-guard: the chunk length can’t exceed the printable width.
   chunkAfter = Math.min(chunkAfter, maxWidth - 1);
 
   const out: string[] = [];
 
   // Helper: split an oversize word into hyphenated pieces
-  const chunkWord = (word: string): string[] => {
+  const chunkWord = async (word: string): Promise<string[]> => {
     const parts: string[] = [];
     for (let i = 0; i < word.length; i += chunkAfter) {
       const slice = word.slice(i, i + chunkAfter);
@@ -109,7 +109,7 @@ export function wrapForThermalPrinter(
       if (!raw) continue; // ignore double-spaces, etc.
 
       // Expand an over-long “word” into hyphenated pieces if needed
-      const pieces = raw.length > chunkAfter ? chunkWord(raw) : [raw];
+      const pieces = raw.length > chunkAfter ? await chunkWord(raw) : [raw];
 
       for (const word of pieces) {
         if (!line.length) {
