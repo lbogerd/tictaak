@@ -13,7 +13,8 @@
     "dev:init": "pnpm install && pnpx prisma db push && pnpx prisma generate",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "release:vps": "git push dokku main"
   },
   "dependencies": {
     "@prisma/client": "6.9.0",
