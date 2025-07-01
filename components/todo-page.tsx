@@ -30,6 +30,7 @@ import {
 import { useCallback, useEffect, useState, useTransition } from "react";
 import RecurringTaskOptions from "./recurring-task-options";
 import TaskCard from "./task-card";
+import TodaysPrintedTasks from "./todays-printed-tasks";
 import TodaysRecurringTasks from "./todays-recurring-tasks";
 
 type Category = Prisma.CategoryGetPayload<Record<string, never>>;
@@ -69,6 +70,7 @@ export default function TodoPage({
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [isLoadingTasks, startTasksTransition] = useTransition();
+  const [printedTasksRefresh, setPrintedTasksRefresh] = useState(0);
 
   // Recurring task state
   const [isRecurring, setIsRecurring] = useState(false);
@@ -223,6 +225,8 @@ export default function TodoPage({
 
       if (result.success) {
         console.log("Task printed successfully");
+        // Trigger refresh of printed tasks component
+        setPrintedTasksRefresh(prev => prev + 1);
       } else {
         console.error("Printing failed:", result.error);
         alert("Printing failed: " + result.error);
@@ -455,7 +459,16 @@ export default function TodoPage({
 
         {/* Today's Recurring Tasks */}
         <TodaysRecurringTasks
-          onTaskPrinted={(task) => setTasks((prev) => [task, ...prev])}
+          onTaskPrinted={(task) => {
+            setTasks((prev) => [task, ...prev]);
+            // Trigger refresh of printed tasks component
+            setPrintedTasksRefresh(prev => prev + 1);
+          }}
+        />
+
+        {/* Today's Printed Tasks */}
+        <TodaysPrintedTasks
+          refreshTrigger={printedTasksRefresh}
         />
 
         {/* Recent Tasks - For Reprinting */}

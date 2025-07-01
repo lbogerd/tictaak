@@ -1,8 +1,8 @@
 "use server";
 
-import { db } from "./prisma";
-import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
+import { revalidatePath } from "next/cache";
+import { db } from "./prisma";
 
 // Task actions
 export async function createTask(
@@ -247,4 +247,24 @@ export async function updateTaskAfterPrint(taskId: string) {
   });
 
   revalidatePath("/");
+}
+
+// Get tasks that were printed today
+export async function getTasksPrintedToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return await db.task.findMany({
+    where: {
+      lastPrintedAt: {
+        gte: today,
+      },
+    },
+    include: {
+      category: true,
+    },
+    orderBy: {
+      lastPrintedAt: "desc",
+    },
+  });
 }
