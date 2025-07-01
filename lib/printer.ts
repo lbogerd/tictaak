@@ -39,7 +39,7 @@ export async function printTask(title: string, category: string) {
     printer.newLine();
 
     printer.setTextQuadArea();
-    printer.println(title);
+    printer.println(await wrapForThermalPrinter(title));
     printer.setTextNormal();
 
     printer.newLine();
