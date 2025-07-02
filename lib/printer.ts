@@ -13,6 +13,11 @@ import {
  * @returns The result of the print operation.
  */
 export async function printTask(title: string, category: string) {
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[MOCK] Printing task:", title, category);
+    return { success: true };
+  }
+
   try {
     const printerUrl = process.env.PRINTER_URL || "tcp://192.168.50.195:9100";
 
