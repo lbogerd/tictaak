@@ -78,7 +78,7 @@ export default function TodaysPrintedTasks({
 		} else if (diffInMinutes < 60) {
 			timeText = `${Math.floor(diffInMinutes)}m ago`;
 		} else {
-			timeText = printedTime.toFormat("h:mm a");
+			timeText = printedTime.toFormat("hh:mm");
 		}
 
 		return (
@@ -98,7 +98,7 @@ export default function TodaysPrintedTasks({
 
 		tasks.forEach((task) => {
 			if (task.lastPrintedAt) {
-				const hourKey = DateTime.fromJSDate(task.lastPrintedAt).startOf("hour").toFormat("h:mm a");
+				const hourKey = DateTime.fromJSDate(task.lastPrintedAt).startOf("hour").toFormat("hh:mm");
 				if (!groups[hourKey]) {
 					groups[hourKey] = [];
 				}
@@ -108,8 +108,8 @@ export default function TodaysPrintedTasks({
 
 		// Sort by time (most recent first)
 		return Object.entries(groups).sort(([a], [b]) => {
-			const timeA = DateTime.fromFormat(a, "h:mm a");
-			const timeB = DateTime.fromFormat(b, "h:mm a");
+			const timeA = DateTime.fromFormat(a, "hh:mm");
+			const timeB = DateTime.fromFormat(b, "hh:mm");
 			return timeB.valueOf() - timeA.valueOf();
 		});
 	};
