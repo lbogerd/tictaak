@@ -15,6 +15,7 @@ import {
   deleteCategory,
   deleteTask,
   getTasks,
+  updateTaskAfterPrint,
 } from "@/lib/actions";
 import { printTask } from "@/lib/printer";
 import { Prisma } from "@prisma/client";
@@ -225,6 +226,9 @@ export default function TodoPage({
 
       if (result.success) {
         console.log("Task printed successfully");
+        // Update the task with the last printed date
+        await updateTaskAfterPrint(task.id);
+
         // Trigger refresh of printed tasks component
         setPrintedTasksRefresh(prev => prev + 1);
       } else {

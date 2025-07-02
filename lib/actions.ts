@@ -21,6 +21,7 @@ export async function createTask(
     data: {
       title,
       categoryId,
+      lastPrintedAt: new Date(),
       ...recurringData,
     },
     include: {
@@ -178,8 +179,6 @@ export async function calculateNextPrintDate(
 export async function getTodaysDueTasks() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
 
   return await db.task.findMany({
     where: {
@@ -187,7 +186,6 @@ export async function getTodaysDueTasks() {
       isActive: true,
       nextPrintDate: {
         gte: today,
-        lt: tomorrow,
       },
     },
     include: {
