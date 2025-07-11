@@ -1,5 +1,11 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import {
+  TaskSectionContainer,
+  TaskSectionHeader,
+  TaskSectionEmptyState,
+  TaskSectionLoadingState,
+  TaskGroup,
+  Badge,
+} from "@/components/ui";
 import {
   deleteTask,
   getTodaysDueTasks,
@@ -13,7 +19,6 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
-  Loader2,
   Repeat,
 } from "lucide-react";
 import { DateTime } from "luxon";
@@ -167,60 +172,37 @@ export default function TodaysRecurringTasks({
 
   if (isLoading) {
     return (
-      <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-purple-100 p-8 mb-8">
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
-          <span className="ml-2 text-purple-700">
-            Loading today&apos;s tasks...
-          </span>
-        </div>
-      </div>
+      <TaskSectionContainer borderColor="purple">
+        <TaskSectionLoadingState 
+          message="Loading today's tasks..."
+          colorScheme="purple"
+        />
+      </TaskSectionContainer>
     );
   }
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-purple-100 p-8 mb-8">
-      <div className="flex flex-col space-y-4 mb-6 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-        <div className="flex flex-col space-y-2 sm:space-y-0">
-          <h2 className="text-xl sm:text-2xl font-bold text-purple-800 flex items-center gap-2 flex-wrap">
-            <Repeat className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
-            <span className="min-w-0">Today&apos;s Recurring Tasks</span>
-            {dueTasks.length > 0 && (
-              <Badge
-                variant="outline"
-                className="bg-purple-50 border-purple-200 text-purple-700 text-xs sm:text-sm"
-              >
-                {dueTasks.length} due
-              </Badge>
-            )}
-          </h2>
-        </div>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleToggleUpcoming}
-          className="text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded-xl w-full sm:w-auto text-sm sm:text-base justify-center sm:justify-start"
-          id="view-all-upcoming"
-        >
-          <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
-          <span className="truncate">View All Upcoming</span>
-          {showUpcoming ? (
-            <ChevronUp className="w-4 h-4 ml-1 flex-shrink-0" />
-          ) : (
-            <ChevronDown className="w-4 h-4 ml-1 flex-shrink-0" />
-          )}
-        </Button>
-      </div>
+    <TaskSectionContainer borderColor="purple">
+      <TaskSectionHeader
+        icon={<Repeat className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />}
+        title="Today's Recurring Tasks"
+        count={dueTasks.length}
+        countLabel="due"
+        actionButton={{
+          label: "View All Upcoming",
+          onClick: handleToggleUpcoming,
+          icon: showUpcoming ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />,
+        }}
+        colorScheme="purple"
+      />
 
       {dueTasks.length === 0 ? (
-        <div className="text-center py-4 md:py-8 text-purple-600">
-          <div className="text-4xl mb-4">✨</div>
-          <p className="text-lg">No recurring tasks due today!</p>
-          <p className="text-sm bg-purple-50 rounded-2xl px-6 py-3 inline-block mt-2">
-            All caught up with your recurring schedule 🎉
-          </p>
-        </div>
+        <TaskSectionEmptyState
+          emoji="✨"
+          primaryMessage="No recurring tasks due today!"
+          secondaryMessage="All caught up with your recurring schedule 🎉"
+          colorScheme="purple"
+        />
       ) : (
         <div className="space-y-4">
           {dueTasks.map((task) => (
@@ -246,16 +228,17 @@ export default function TodaysRecurringTasks({
           </h3>
 
           {isLoadingUpcoming ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-5 h-5 animate-spin text-purple-500" />
-              <span className="ml-2 text-purple-600">
-                Loading upcoming tasks...
-              </span>
-            </div>
+            <TaskSectionLoadingState 
+              message="Loading upcoming tasks..."
+              colorScheme="purple"
+            />
           ) : upcomingTasks.length === 0 ? (
-            <div className="text-center py-6 text-purple-600">
-              <p>No recurring tasks scheduled for the next 30 days.</p>
-            </div>
+            <TaskSectionEmptyState
+              emoji="📅"
+              primaryMessage="No recurring tasks scheduled"
+              secondaryMessage="for the next 30 days"
+              colorScheme="purple"
+            />
           ) : (
             <div className="space-y-6">
               {groupTasksByDate(upcomingTasks).map(([dateKey, dateTasks]) => {
@@ -271,39 +254,32 @@ export default function TodaysRecurringTasks({
                 else if (isTomorrow) dateLabel = "Tomorrow";
 
                 return (
-                  <div key={dateKey}>
-                    <h4 className="text-sm font-medium text-purple-600 mb-3 flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      {dateLabel}
-                      <Badge
-                        variant="outline"
-                        className="text-xs bg-purple-50 border-purple-200 text-purple-700"
-                      >
-                        {dateTasks.length} task
-                        {dateTasks.length !== 1 ? "s" : ""}
-                      </Badge>
-                    </h4>
-
-                    <div className="space-y-3 ml-6">
-                      {dateTasks.map((task) => (
-                        <TaskCard
-                          key={`upcoming-${task.id}`}
-                          task={task}
-                          onPrint={handlePrint}
-                          isPrinting={printingTaskId === task.id}
-                          variant="recurring"
-                          additionalBadges={getRecurringBadges(task)}
-                          onDelete={handleDelete}
-                        />
-                      ))}
-                    </div>
-                  </div>
+                  <TaskGroup
+                    key={dateKey}
+                    title={dateLabel}
+                    icon={<Clock className="w-4 h-4" />}
+                    count={dateTasks.length}
+                    countLabel="task"
+                    colorScheme="purple"
+                  >
+                    {dateTasks.map((task) => (
+                      <TaskCard
+                        key={`upcoming-${task.id}`}
+                        task={task}
+                        onPrint={handlePrint}
+                        isPrinting={printingTaskId === task.id}
+                        variant="recurring"
+                        additionalBadges={getRecurringBadges(task)}
+                        onDelete={handleDelete}
+                      />
+                    ))}
+                  </TaskGroup>
                 );
               })}
             </div>
           )}
         </div>
       )}
-    </div>
+    </TaskSectionContainer>
   );
 }
