@@ -25,10 +25,12 @@ type Task = Prisma.TaskGetPayload<{
 }>;
 
 interface TodaysRecurringTasksProps {
+  refreshTrigger?: number;
   onTaskPrinted?: (task: Task) => void;
 }
 
 export default function TodaysRecurringTasks({
+  refreshTrigger,
   onTaskPrinted,
 }: TodaysRecurringTasksProps) {
   const [dueTasks, setDueTasks] = useState<Task[]>([]);
@@ -40,14 +42,14 @@ export default function TodaysRecurringTasks({
 
   // Selection state
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
   const [selectionMode, setSelectionMode] = useState(false);
   const [isPrintingBulk, setIsPrintingBulk] = useState(false);
 
   useEffect(() => {
     loadDueTasks();
-  }, []);
+  }, [refreshTrigger]);
 
   const loadDueTasks = async () => {
     try {
@@ -110,7 +112,7 @@ export default function TodaysRecurringTasks({
       console.error("Printing error:", error);
       alert(
         "Printing error: " +
-          (error instanceof Error ? error.message : "Unknown error"),
+          (error instanceof Error ? error.message : "Unknown error")
       );
     } finally {
       setPrintingTaskId(null);
@@ -143,7 +145,7 @@ export default function TodaysRecurringTasks({
         {task.recurringType === "weekly" &&
           task.recurringDays &&
           ` • ${getDayNames(task.recurringDays)}`}
-      </Badge>,
+      </Badge>
     );
 
     return badges;
@@ -155,7 +157,7 @@ export default function TodaysRecurringTasks({
     tasks.forEach((task) => {
       if (task.nextPrintDate) {
         const dateKey = DateTime.fromJSDate(task.nextPrintDate).toFormat(
-          "yyyy-MM-dd",
+          "yyyy-MM-dd"
         );
         if (!groups[dateKey]) {
           groups[dateKey] = [];
@@ -206,7 +208,7 @@ export default function TodaysRecurringTasks({
   const handleToggleGroupSelection = (tasks: Task[]) => {
     const groupTaskIds = tasks.map((task) => task.id);
     const allGroupSelected = groupTaskIds.every((id) =>
-      selectedTaskIds.has(id),
+      selectedTaskIds.has(id)
     );
 
     setSelectedTaskIds((prev: Set<string>) => {
@@ -227,7 +229,7 @@ export default function TodaysRecurringTasks({
 
     setIsPrintingBulk(true);
     const selectedTasks = [...dueTasks, ...upcomingTasks].filter((task) =>
-      selectedTaskIds.has(task.id),
+      selectedTaskIds.has(task.id)
     );
 
     try {
@@ -252,10 +254,10 @@ export default function TodaysRecurringTasks({
         await deleteTask(taskId);
       }
       setDueTasks((prev) =>
-        prev.filter((task) => !selectedTaskIds.has(task.id)),
+        prev.filter((task) => !selectedTaskIds.has(task.id))
       );
       setUpcomingTasks((prev) =>
-        prev.filter((task) => !selectedTaskIds.has(task.id)),
+        prev.filter((task) => !selectedTaskIds.has(task.id))
       );
       setSelectedTaskIds(new Set());
     } catch (error) {
@@ -357,7 +359,7 @@ export default function TodaysRecurringTasks({
                 const isToday = date.hasSame(DateTime.now(), "day");
                 const isTomorrow = date.hasSame(
                   DateTime.now().plus({ days: 1 }),
-                  "day",
+                  "day"
                 );
 
                 let dateLabel = date.toFormat("EEEE, MMMM d");
@@ -365,7 +367,7 @@ export default function TodaysRecurringTasks({
                 else if (isTomorrow) dateLabel = "Tomorrow";
 
                 const groupSelectedCount = dateTasks.filter((task) =>
-                  selectedTaskIds.has(task.id),
+                  selectedTaskIds.has(task.id)
                 ).length;
 
                 return (

@@ -72,6 +72,7 @@ export default function TodoPage({
   const [isPrinting, setIsPrinting] = useState(false);
   const [isLoadingTasks, startTasksTransition] = useTransition();
   const [printedTasksRefresh, setPrintedTasksRefresh] = useState(0);
+  const [recurringTasksRefresh, setRecurringTasksRefresh] = useState(0);
 
   // Recurring task state
   const [isRecurring, setIsRecurring] = useState(false);
@@ -167,9 +168,14 @@ export default function TodoPage({
       const task = await createTask(
         newTitle,
         selectedCategoryId,
-        recurringData,
+        recurringData
       );
       setTasks((prev) => [task, ...prev]);
+
+      // If it's a recurring task, trigger refresh of recurring tasks sections
+      if (isRecurring) {
+        setRecurringTasksRefresh((prev) => prev + 1);
+      }
 
       // Print the task
       if (print) await handlePrint(task);
@@ -188,6 +194,12 @@ export default function TodoPage({
       const today = now.getDay();
       const sortedDays = selectedDays.sort((a, b) => a - b);
 
+      // Check if today is one of the selected days
+      if (selectedDays.includes(today)) {
+        // Available for printing today
+        return now;
+      }
+
       // Find next day in the current week
       const nextDay = sortedDays.find((day) => day > today);
 
@@ -205,16 +217,12 @@ export default function TodoPage({
         return nextDate;
       }
     } else if (recurringType === "daily") {
-      // Next occurrence is tomorrow
-      const nextDate = new Date(now);
-      nextDate.setDate(now.getDate() + 1);
-      return nextDate;
+      // Available for printing today
+      return now;
     }
 
-    // Default to tomorrow
-    const nextDate = new Date(now);
-    nextDate.setDate(now.getDate() + 1);
-    return nextDate;
+    // Default to today for immediate availability
+    return now;
   };
 
   const handlePrint = async (task: Task) => {
@@ -239,7 +247,7 @@ export default function TodoPage({
       console.error("Printing error:", error);
       alert(
         "Printing error: " +
-          (error instanceof Error ? error.message : "Unknown error"),
+          (error instanceof Error ? error.message : "Unknown error")
       );
     } finally {
       setIsPrinting(false);
@@ -261,7 +269,7 @@ export default function TodoPage({
     try {
       const category = await createCategory(newCategoryName);
       setCategories((prev) =>
-        [...prev, category].sort((a, b) => a.name.localeCompare(b.name)),
+        [...prev, category].sort((a, b) => a.name.localeCompare(b.name))
       );
       setSelectedCategoryId(category.id);
       setNewCategoryName("");
@@ -275,7 +283,7 @@ export default function TodoPage({
   const handleDeleteCategory = async (categoryId: string) => {
     if (
       !confirm(
-        "Delete this category? All tasks in this category will also be deleted.",
+        "Delete this category? All tasks in this category will also be deleted."
       )
     )
       return;
@@ -463,8 +471,21 @@ export default function TodoPage({
 
         {/* Today's Recurring Tasks */}
         <TodaysRecurringTasks
+          refreshTrigger={recurringTasksRefresh}
           onTaskPrinted={(task) => {
-            setTasks((prev) => [task, ...prev]);
+            setTasks((prev) => {
+              // Check if task already exists to prevent duplicates
+              const existingIndex = prev.findIndex((t) => t.id === task.id);
+              if (existingIndex >= 0) {
+                // Task already exists, update it and move to front
+                const updatedTasks = [...prev];
+                updatedTasks.splice(existingIndex, 1);
+                return [task, ...updatedTasks];
+              } else {
+                // Task doesn't exist, add it to front
+                return [task, ...prev];
+              }
+            });
             // Trigger refresh of printed tasks component
             setPrintedTasksRefresh((prev) => prev + 1);
           }}

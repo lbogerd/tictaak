@@ -15,13 +15,15 @@ export async function createTask(
     | "recurringInterval"
     | "recurringDays"
     | "nextPrintDate"
-  >,
+  >
 ) {
   const task = await db.task.create({
     data: {
       title,
       categoryId,
-      lastPrintedAt: new Date(),
+      // Only set lastPrintedAt for non-recurring tasks (they get printed immediately)
+      // Recurring tasks should not have lastPrintedAt set until actually printed
+      lastPrintedAt: recurringData?.isRecurring ? null : new Date(),
       ...recurringData,
     },
     include: {
@@ -137,7 +139,7 @@ export async function initializeDefaultCategories() {
 export async function calculateNextPrintDate(
   recurringType: string,
   recurringDays?: string | null,
-  recurringInterval: number = 1,
+  recurringInterval: number = 1
 ): Promise<Date> {
   const now = new Date();
 
@@ -179,6 +181,8 @@ export async function calculateNextPrintDate(
 export async function getTodaysDueTasks() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
 
   return await db.task.findMany({
     where: {
@@ -186,7 +190,18 @@ export async function getTodaysDueTasks() {
       isActive: true,
       nextPrintDate: {
         gte: today,
+        lt: tomorrow,
       },
+      OR: [
+        {
+          lastPrintedAt: {
+            lt: today,
+          },
+        },
+        {
+          lastPrintedAt: null,
+        },
+      ],
     },
     include: {
       category: true,
@@ -233,7 +248,7 @@ export async function updateTaskAfterPrint(taskId: string) {
   const nextPrintDate = await calculateNextPrintDate(
     task.recurringType!,
     task.recurringDays,
-    task.recurringInterval || 1,
+    task.recurringInterval || 1
   );
 
   await db.task.update({

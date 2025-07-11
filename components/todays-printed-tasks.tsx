@@ -30,7 +30,7 @@ export default function TodaysPrintedTasks({
 
   // Selection state
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
   const [selectionMode, setSelectionMode] = useState(false);
 
@@ -159,7 +159,7 @@ export default function TodaysPrintedTasks({
   const handleToggleGroupSelection = (tasks: Task[]) => {
     const groupTaskIds = tasks.map((task) => task.id);
     const allGroupSelected = groupTaskIds.every((id) =>
-      selectedTaskIds.has(id),
+      selectedTaskIds.has(id)
     );
 
     setSelectedTaskIds((prev: Set<string>) => {
@@ -212,13 +212,13 @@ export default function TodaysPrintedTasks({
         <div className="space-y-6">
           {groupTasksByHour(printedTasks).map(([hourKey, hourTasks]) => {
             const groupSelectedCount = hourTasks.filter((task) =>
-              selectedTaskIds.has(task.id),
+              selectedTaskIds.has(task.id)
             ).length;
 
             return (
               <TaskGroup
                 key={hourKey}
-                title={`Around ${hourKey}`}
+                title={`After ${hourKey}`}
                 icon={<CheckCircle className="w-4 h-4" />}
                 count={hourTasks.length}
                 countLabel="task"
@@ -248,15 +248,6 @@ export default function TodaysPrintedTasks({
               </TaskGroup>
             );
           })}
-        </div>
-      )}
-
-      {printedTasks.length > 0 && (
-        <div className="mt-6 pt-4 border-t border-green-100">
-          <p className="text-xs text-green-600 text-center">
-            Great job! You&apos;ve completed {printedTasks.length} task
-            {printedTasks.length !== 1 ? "s" : ""} today 🎉
-          </p>
         </div>
       )}
 

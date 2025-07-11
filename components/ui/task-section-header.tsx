@@ -60,7 +60,6 @@ export function TaskSectionHeader({
   const colors = colorSchemes[colorScheme];
 
   const isAllSelected = selectedCount === totalCount && totalCount > 0;
-  const isSomeSelected = selectedCount > 0;
 
   return (
     <div className="flex flex-col space-y-4 mb-6 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
@@ -106,7 +105,11 @@ export function TaskSectionHeader({
             variant={selectionMode ? "default" : "ghost"}
             size="sm"
             onClick={onToggleSelectionMode}
-            className={`rounded-xl text-sm ${selectionMode ? "bg-blue-600 hover:bg-blue-700 text-white" : colors.button}`}
+            className={`rounded-xl text-sm ${
+              selectionMode
+                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                : colors.button
+            }`}
           >
             {selectionMode ? "Done" : "Select"}
           </Button>
