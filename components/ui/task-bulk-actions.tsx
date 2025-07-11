@@ -31,12 +31,14 @@ export function TaskBulkActions({
   const colors = colorSchemes[colorScheme];
 
   return (
-    <div className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 ${colors} border rounded-2xl p-4 shadow-lg backdrop-blur-sm z-50`}>
+    <div
+      className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 ${colors} border rounded-2xl p-4 shadow-lg backdrop-blur-sm z-50`}
+    >
       <div className="flex items-center gap-4">
         <span className="text-sm font-medium text-gray-700">
           {selectedCount} task{selectedCount !== 1 ? "s" : ""} selected
         </span>
-        
+
         <div className="flex items-center gap-2">
           {onBulkPrint && (
             <Button
@@ -49,7 +51,7 @@ export function TaskBulkActions({
               {isPrintingBulk ? "Printing..." : "Print All"}
             </Button>
           )}
-          
+
           {onBulkDelete && (
             <Button
               variant="outline"
@@ -61,7 +63,7 @@ export function TaskBulkActions({
               Delete
             </Button>
           )}
-          
+
           {onClearSelection && (
             <Button
               variant="ghost"

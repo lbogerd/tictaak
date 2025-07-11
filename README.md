@@ -63,6 +63,7 @@ tictaak/
 ## Development
 
 This project uses:
+
 - **ESLint** for code linting
 - **TypeScript** for type safety
 - **Tailwind CSS** for styling

@@ -15,7 +15,7 @@ export async function createTask(
     | "recurringInterval"
     | "recurringDays"
     | "nextPrintDate"
-  >
+  >,
 ) {
   const task = await db.task.create({
     data: {
@@ -137,7 +137,7 @@ export async function initializeDefaultCategories() {
 export async function calculateNextPrintDate(
   recurringType: string,
   recurringDays?: string | null,
-  recurringInterval: number = 1
+  recurringInterval: number = 1,
 ): Promise<Date> {
   const now = new Date();
 
@@ -233,7 +233,7 @@ export async function updateTaskAfterPrint(taskId: string) {
   const nextPrintDate = await calculateNextPrintDate(
     task.recurringType!,
     task.recurringDays,
-    task.recurringInterval || 1
+    task.recurringInterval || 1,
   );
 
   await db.task.update({

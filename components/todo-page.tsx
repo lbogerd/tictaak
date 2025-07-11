@@ -155,19 +155,19 @@ export default function TodoPage({
     try {
       const recurringData = isRecurring
         ? {
-          isRecurring: true,
-          recurringType,
-          recurringInterval: 1,
-          recurringDays:
-            recurringType === "weekly" ? JSON.stringify(selectedDays) : null,
-          nextPrintDate: calculateNextPrintDate(),
-        }
+            isRecurring: true,
+            recurringType,
+            recurringInterval: 1,
+            recurringDays:
+              recurringType === "weekly" ? JSON.stringify(selectedDays) : null,
+            nextPrintDate: calculateNextPrintDate(),
+          }
         : undefined;
 
       const task = await createTask(
         newTitle,
         selectedCategoryId,
-        recurringData
+        recurringData,
       );
       setTasks((prev) => [task, ...prev]);
 
@@ -230,7 +230,7 @@ export default function TodoPage({
         await updateTaskAfterPrint(task.id);
 
         // Trigger refresh of printed tasks component
-        setPrintedTasksRefresh(prev => prev + 1);
+        setPrintedTasksRefresh((prev) => prev + 1);
       } else {
         console.error("Printing failed:", result.error);
         alert("Printing failed: " + result.error);
@@ -239,7 +239,7 @@ export default function TodoPage({
       console.error("Printing error:", error);
       alert(
         "Printing error: " +
-        (error instanceof Error ? error.message : "Unknown error")
+          (error instanceof Error ? error.message : "Unknown error"),
       );
     } finally {
       setIsPrinting(false);
@@ -261,7 +261,7 @@ export default function TodoPage({
     try {
       const category = await createCategory(newCategoryName);
       setCategories((prev) =>
-        [...prev, category].sort((a, b) => a.name.localeCompare(b.name))
+        [...prev, category].sort((a, b) => a.name.localeCompare(b.name)),
       );
       setSelectedCategoryId(category.id);
       setNewCategoryName("");
@@ -275,7 +275,7 @@ export default function TodoPage({
   const handleDeleteCategory = async (categoryId: string) => {
     if (
       !confirm(
-        "Delete this category? All tasks in this category will also be deleted."
+        "Delete this category? All tasks in this category will also be deleted.",
       )
     )
       return;
@@ -466,14 +466,12 @@ export default function TodoPage({
           onTaskPrinted={(task) => {
             setTasks((prev) => [task, ...prev]);
             // Trigger refresh of printed tasks component
-            setPrintedTasksRefresh(prev => prev + 1);
+            setPrintedTasksRefresh((prev) => prev + 1);
           }}
         />
 
         {/* Today's Printed Tasks */}
-        <TodaysPrintedTasks
-          refreshTrigger={printedTasksRefresh}
-        />
+        <TodaysPrintedTasks refreshTrigger={printedTasksRefresh} />
 
         {/* Recent Tasks - For Reprinting */}
         <div

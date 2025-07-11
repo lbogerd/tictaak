@@ -30,8 +30,8 @@ export default function RecurringTaskOptions({
   const toggleDay = (dayIndex: number) => {
     setSelectedDays(
       selectedDays.includes(dayIndex)
-        ? selectedDays.filter(d => d !== dayIndex)
-        : [...selectedDays, dayIndex].sort()
+        ? selectedDays.filter((d) => d !== dayIndex)
+        : [...selectedDays, dayIndex].sort(),
     );
   };
 
@@ -42,10 +42,11 @@ export default function RecurringTaskOptions({
           type="button"
           variant={isRecurring ? "default" : "outline"}
           onClick={() => setIsRecurring(!isRecurring)}
-          className={`rounded-xl transition-all duration-200 ${isRecurring
-            ? "bg-purple-500 hover:bg-purple-600 text-white"
-            : "border-purple-200 text-purple-700 hover:bg-purple-50"
-            }`}
+          className={`rounded-xl transition-all duration-200 ${
+            isRecurring
+              ? "bg-purple-500 hover:bg-purple-600 text-white"
+              : "border-purple-200 text-purple-700 hover:bg-purple-50"
+          }`}
         >
           <Repeat className="w-4 h-4 mr-2" />
           {isRecurring ? "Recurring Task" : "Make Recurring"}
@@ -78,10 +79,11 @@ export default function RecurringTaskOptions({
                 variant={selectedDays.includes(index) ? "default" : "outline"}
                 size="sm"
                 onClick={() => toggleDay(index)}
-                className={`w-12 h-8 rounded-lg text-xs transition-all duration-200 ${selectedDays.includes(index)
-                  ? "bg-purple-500 hover:bg-purple-600 text-white"
-                  : "border-purple-200 text-purple-700 hover:bg-purple-50"
-                  }`}
+                className={`w-12 h-8 rounded-lg text-xs transition-all duration-200 ${
+                  selectedDays.includes(index)
+                    ? "bg-purple-500 hover:bg-purple-600 text-white"
+                    : "border-purple-200 text-purple-700 hover:bg-purple-50"
+                }`}
               >
                 {day}
               </Button>

@@ -61,7 +61,7 @@ export default function TaskCard({
   return (
     <Card
       className={`hover:shadow-md transition-all duration-300 transform hover:scale-[1.01] rounded-2xl ${colors.border} ${colors.background} ${
-        isSelected ? 'ring-2 ring-blue-400 bg-blue-50/50' : ''
+        isSelected ? "ring-2 ring-blue-400 bg-blue-50/50" : ""
       }`}
     >
       <CardHeader className="flex flex-col sm:flex-row">
@@ -75,7 +75,9 @@ export default function TaskCard({
             />
           </div>
         )}
-        <CardTitle className={`text-xl ${colors.title} ${selectionMode ? 'flex-1' : ''}`}>
+        <CardTitle
+          className={`text-xl ${colors.title} ${selectionMode ? "flex-1" : ""}`}
+        >
           {task.title}
         </CardTitle>
 
@@ -125,8 +127,8 @@ export default function TaskCard({
           {isPrinting
             ? "Printing..."
             : variant === "recurring"
-            ? "Print Now"
-            : "Reprint"}
+              ? "Print Now"
+              : "Reprint"}
         </Button>
 
         {onEdit && (

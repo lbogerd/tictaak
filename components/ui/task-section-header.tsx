@@ -41,13 +41,13 @@ export function TaskSectionHeader({
       button: "text-rose-600 hover:text-rose-800 hover:bg-rose-50",
     },
     purple: {
-      title: "text-purple-800", 
+      title: "text-purple-800",
       badge: "bg-purple-50 border-purple-200 text-purple-700",
       button: "text-purple-600 hover:text-purple-800 hover:bg-purple-50",
     },
     green: {
       title: "text-green-800",
-      badge: "bg-green-50 border-green-200 text-green-700", 
+      badge: "bg-green-50 border-green-200 text-green-700",
       button: "text-green-600 hover:text-green-800 hover:bg-green-50",
     },
     amber: {
@@ -65,7 +65,9 @@ export function TaskSectionHeader({
   return (
     <div className="flex flex-col space-y-4 mb-6 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
       <div className="flex flex-col space-y-2 sm:space-y-0">
-        <h2 className={`text-xl sm:text-2xl font-bold flex items-center gap-2 flex-wrap ${colors.title}`}>
+        <h2
+          className={`text-xl sm:text-2xl font-bold flex items-center gap-2 flex-wrap ${colors.title}`}
+        >
           {icon}
           <span className="min-w-0">{title}</span>
           {count !== undefined && count > 0 && (
@@ -98,13 +100,13 @@ export function TaskSectionHeader({
             {isAllSelected ? "Deselect All" : "Select All"}
           </Button>
         )}
-        
+
         {onToggleSelectionMode && totalCount > 0 && (
           <Button
             variant={selectionMode ? "default" : "ghost"}
             size="sm"
             onClick={onToggleSelectionMode}
-            className={`rounded-xl text-sm ${selectionMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : colors.button}`}
+            className={`rounded-xl text-sm ${selectionMode ? "bg-blue-600 hover:bg-blue-700 text-white" : colors.button}`}
           >
             {selectionMode ? "Done" : "Select"}
           </Button>

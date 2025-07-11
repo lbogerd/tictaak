@@ -15,13 +15,7 @@ import {
 } from "@/lib/actions";
 import { printTask } from "@/lib/printer";
 import { Prisma } from "@prisma/client";
-import {
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  Repeat,
-} from "lucide-react";
+import { Calendar, ChevronDown, ChevronUp, Clock, Repeat } from "lucide-react";
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import TaskCard from "./task-card";
@@ -43,9 +37,11 @@ export default function TodaysRecurringTasks({
   const [isLoading, setIsLoading] = useState(true);
   const [showUpcoming, setShowUpcoming] = useState(false);
   const [isLoadingUpcoming, setIsLoadingUpcoming] = useState(false);
-  
+
   // Selection state
-  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [selectionMode, setSelectionMode] = useState(false);
   const [isPrintingBulk, setIsPrintingBulk] = useState(false);
 
@@ -114,7 +110,7 @@ export default function TodaysRecurringTasks({
       console.error("Printing error:", error);
       alert(
         "Printing error: " +
-        (error instanceof Error ? error.message : "Unknown error")
+          (error instanceof Error ? error.message : "Unknown error"),
       );
     } finally {
       setPrintingTaskId(null);
@@ -147,7 +143,7 @@ export default function TodaysRecurringTasks({
         {task.recurringType === "weekly" &&
           task.recurringDays &&
           ` • ${getDayNames(task.recurringDays)}`}
-      </Badge>
+      </Badge>,
     );
 
     return badges;
@@ -159,7 +155,7 @@ export default function TodaysRecurringTasks({
     tasks.forEach((task) => {
       if (task.nextPrintDate) {
         const dateKey = DateTime.fromJSDate(task.nextPrintDate).toFormat(
-          "yyyy-MM-dd"
+          "yyyy-MM-dd",
         );
         if (!groups[dateKey]) {
           groups[dateKey] = [];
@@ -197,9 +193,9 @@ export default function TodaysRecurringTasks({
   };
 
   const handleToggleAllSelection = () => {
-    const allTaskIds = [...dueTasks, ...upcomingTasks].map(task => task.id);
-    const allSelected = allTaskIds.every(id => selectedTaskIds.has(id));
-    
+    const allTaskIds = [...dueTasks, ...upcomingTasks].map((task) => task.id);
+    const allSelected = allTaskIds.every((id) => selectedTaskIds.has(id));
+
     if (allSelected) {
       setSelectedTaskIds(new Set());
     } else {
@@ -208,28 +204,32 @@ export default function TodaysRecurringTasks({
   };
 
   const handleToggleGroupSelection = (tasks: Task[]) => {
-    const groupTaskIds = tasks.map(task => task.id);
-    const allGroupSelected = groupTaskIds.every(id => selectedTaskIds.has(id));
-    
+    const groupTaskIds = tasks.map((task) => task.id);
+    const allGroupSelected = groupTaskIds.every((id) =>
+      selectedTaskIds.has(id),
+    );
+
     setSelectedTaskIds((prev: Set<string>) => {
       const newSet = new Set(prev);
-      
+
       if (allGroupSelected) {
-        groupTaskIds.forEach(id => newSet.delete(id));
+        groupTaskIds.forEach((id) => newSet.delete(id));
       } else {
-        groupTaskIds.forEach(id => newSet.add(id));
+        groupTaskIds.forEach((id) => newSet.add(id));
       }
-      
+
       return newSet;
     });
   };
 
   const handleBulkPrint = async () => {
     if (selectedTaskIds.size === 0) return;
-    
+
     setIsPrintingBulk(true);
-    const selectedTasks = [...dueTasks, ...upcomingTasks].filter(task => selectedTaskIds.has(task.id));
-    
+    const selectedTasks = [...dueTasks, ...upcomingTasks].filter((task) =>
+      selectedTaskIds.has(task.id),
+    );
+
     try {
       for (const task of selectedTasks) {
         await handlePrint(task);
@@ -244,15 +244,19 @@ export default function TodaysRecurringTasks({
 
   const handleBulkDelete = async () => {
     if (selectedTaskIds.size === 0) return;
-    
+
     if (!confirm(`Delete ${selectedTaskIds.size} selected tasks?`)) return;
-    
+
     try {
       for (const taskId of selectedTaskIds) {
         await deleteTask(taskId);
       }
-      setDueTasks((prev) => prev.filter(task => !selectedTaskIds.has(task.id)));
-      setUpcomingTasks((prev) => prev.filter(task => !selectedTaskIds.has(task.id)));
+      setDueTasks((prev) =>
+        prev.filter((task) => !selectedTaskIds.has(task.id)),
+      );
+      setUpcomingTasks((prev) =>
+        prev.filter((task) => !selectedTaskIds.has(task.id)),
+      );
       setSelectedTaskIds(new Set());
     } catch (error) {
       console.error("Bulk delete failed:", error);
@@ -264,7 +268,7 @@ export default function TodaysRecurringTasks({
   if (isLoading) {
     return (
       <TaskSectionContainer borderColor="purple">
-        <TaskSectionLoadingState 
+        <TaskSectionLoadingState
           message="Loading today's tasks..."
           colorScheme="purple"
         />
@@ -279,11 +283,19 @@ export default function TodaysRecurringTasks({
         title="Today's Recurring Tasks"
         count={dueTasks.length}
         countLabel="due"
-        actionButton={!selectionMode ? {
-          label: "View All Upcoming",
-          onClick: handleToggleUpcoming,
-          icon: showUpcoming ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />,
-        } : undefined}
+        actionButton={
+          !selectionMode
+            ? {
+                label: "View All Upcoming",
+                onClick: handleToggleUpcoming,
+                icon: showUpcoming ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                ),
+              }
+            : undefined
+        }
         colorScheme="purple"
         selectionMode={selectionMode}
         selectedCount={selectedTaskIds.size}
@@ -327,7 +339,7 @@ export default function TodaysRecurringTasks({
           </h3>
 
           {isLoadingUpcoming ? (
-            <TaskSectionLoadingState 
+            <TaskSectionLoadingState
               message="Loading upcoming tasks..."
               colorScheme="purple"
             />
@@ -345,15 +357,17 @@ export default function TodaysRecurringTasks({
                 const isToday = date.hasSame(DateTime.now(), "day");
                 const isTomorrow = date.hasSame(
                   DateTime.now().plus({ days: 1 }),
-                  "day"
+                  "day",
                 );
 
                 let dateLabel = date.toFormat("EEEE, MMMM d");
                 if (isToday) dateLabel = "Today";
                 else if (isTomorrow) dateLabel = "Tomorrow";
 
-                const groupSelectedCount = dateTasks.filter(task => selectedTaskIds.has(task.id)).length;
-                
+                const groupSelectedCount = dateTasks.filter((task) =>
+                  selectedTaskIds.has(task.id),
+                ).length;
+
                 return (
                   <TaskGroup
                     key={dateKey}
@@ -364,7 +378,9 @@ export default function TodaysRecurringTasks({
                     colorScheme="purple"
                     selectionMode={selectionMode}
                     selectedCount={groupSelectedCount}
-                    onToggleGroupSelection={() => handleToggleGroupSelection(dateTasks)}
+                    onToggleGroupSelection={() =>
+                      handleToggleGroupSelection(dateTasks)
+                    }
                   >
                     {dateTasks.map((task) => (
                       <TaskCard
@@ -387,7 +403,7 @@ export default function TodaysRecurringTasks({
           )}
         </div>
       )}
-      
+
       <TaskBulkActions
         selectedCount={selectedTaskIds.size}
         onBulkPrint={handleBulkPrint}

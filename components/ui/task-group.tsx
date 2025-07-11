@@ -30,7 +30,7 @@ export function TaskGroup({
       badge: "bg-rose-50 border-rose-200 text-rose-700",
     },
     purple: {
-      title: "text-purple-600", 
+      title: "text-purple-600",
       badge: "bg-purple-50 border-purple-200 text-purple-700",
     },
     green: {
@@ -48,15 +48,15 @@ export function TaskGroup({
 
   return (
     <div>
-      <div className={`text-sm font-medium mb-3 flex items-center gap-2 ${colors.title}`}>
+      <div
+        className={`text-sm font-medium mb-3 flex items-center gap-2 ${colors.title}`}
+      >
         <div className="flex items-center gap-2">
           {icon && <span className="w-4 h-4">{icon}</span>}
           {title}
-          <Badge
-            variant="outline"
-            className={`text-xs ${colors.badge}`}
-          >
-            {count} {countLabel}{count !== 1 ? "s" : ""}
+          <Badge variant="outline" className={`text-xs ${colors.badge}`}>
+            {count} {countLabel}
+            {count !== 1 ? "s" : ""}
           </Badge>
           {selectionMode && selectedCount > 0 && (
             <Badge
@@ -67,7 +67,7 @@ export function TaskGroup({
             </Badge>
           )}
         </div>
-        
+
         {selectionMode && onToggleGroupSelection && count > 0 && (
           <button
             onClick={onToggleGroupSelection}
@@ -78,9 +78,7 @@ export function TaskGroup({
         )}
       </div>
 
-      <div className="space-y-3 ml-6">
-        {children}
-      </div>
+      <div className="space-y-3">{children}</div>
     </div>
   );
 }
