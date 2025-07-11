@@ -7,8 +7,10 @@ type Variant = "default" | "rose" | "amber" | "green" | "purple";
 interface SectionContainerProps extends HTMLAttributes<HTMLDivElement> {
   /** Colour variant that controls the border colour */
   variant?: Variant;
+  /** CSS className(s) passed to the wrapper */
+  className?: string;
   /** Section content */
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 const variantClasses: Record<Variant, string> = {
