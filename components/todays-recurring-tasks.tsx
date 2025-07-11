@@ -4,6 +4,7 @@ import {
   TaskSectionEmptyState,
   TaskSectionLoadingState,
   TaskGroup,
+  TaskBulkActions,
   Badge,
 } from "@/components/ui";
 import {
@@ -42,6 +43,11 @@ export default function TodaysRecurringTasks({
   const [isLoading, setIsLoading] = useState(true);
   const [showUpcoming, setShowUpcoming] = useState(false);
   const [isLoadingUpcoming, setIsLoadingUpcoming] = useState(false);
+  
+  // Selection state
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [isPrintingBulk, setIsPrintingBulk] = useState(false);
 
   useEffect(() => {
     loadDueTasks();
@@ -170,6 +176,91 @@ export default function TodaysRecurringTasks({
     setDueTasks((prev) => prev.filter((t) => t.id !== taskId));
   };
 
+  // Selection handlers
+  const handleTaskSelection = (taskId: string, selected: boolean) => {
+    setSelectedTaskIds((prev: Set<string>) => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(taskId);
+      } else {
+        newSet.delete(taskId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleToggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    if (selectionMode) {
+      setSelectedTaskIds(new Set());
+    }
+  };
+
+  const handleToggleAllSelection = () => {
+    const allTaskIds = [...dueTasks, ...upcomingTasks].map(task => task.id);
+    const allSelected = allTaskIds.every(id => selectedTaskIds.has(id));
+    
+    if (allSelected) {
+      setSelectedTaskIds(new Set());
+    } else {
+      setSelectedTaskIds(new Set(allTaskIds));
+    }
+  };
+
+  const handleToggleGroupSelection = (tasks: Task[]) => {
+    const groupTaskIds = tasks.map(task => task.id);
+    const allGroupSelected = groupTaskIds.every(id => selectedTaskIds.has(id));
+    
+    setSelectedTaskIds((prev: Set<string>) => {
+      const newSet = new Set(prev);
+      
+      if (allGroupSelected) {
+        groupTaskIds.forEach(id => newSet.delete(id));
+      } else {
+        groupTaskIds.forEach(id => newSet.add(id));
+      }
+      
+      return newSet;
+    });
+  };
+
+  const handleBulkPrint = async () => {
+    if (selectedTaskIds.size === 0) return;
+    
+    setIsPrintingBulk(true);
+    const selectedTasks = [...dueTasks, ...upcomingTasks].filter(task => selectedTaskIds.has(task.id));
+    
+    try {
+      for (const task of selectedTasks) {
+        await handlePrint(task);
+      }
+      setSelectedTaskIds(new Set());
+    } catch (error) {
+      console.error("Bulk print failed:", error);
+    } finally {
+      setIsPrintingBulk(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedTaskIds.size === 0) return;
+    
+    if (!confirm(`Delete ${selectedTaskIds.size} selected tasks?`)) return;
+    
+    try {
+      for (const taskId of selectedTaskIds) {
+        await deleteTask(taskId);
+      }
+      setDueTasks((prev) => prev.filter(task => !selectedTaskIds.has(task.id)));
+      setUpcomingTasks((prev) => prev.filter(task => !selectedTaskIds.has(task.id)));
+      setSelectedTaskIds(new Set());
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+  };
+
+  const totalTaskCount = dueTasks.length + upcomingTasks.length;
+
   if (isLoading) {
     return (
       <TaskSectionContainer borderColor="purple">
@@ -188,12 +279,17 @@ export default function TodaysRecurringTasks({
         title="Today's Recurring Tasks"
         count={dueTasks.length}
         countLabel="due"
-        actionButton={{
+        actionButton={!selectionMode ? {
           label: "View All Upcoming",
           onClick: handleToggleUpcoming,
           icon: showUpcoming ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />,
-        }}
+        } : undefined}
         colorScheme="purple"
+        selectionMode={selectionMode}
+        selectedCount={selectedTaskIds.size}
+        totalCount={totalTaskCount}
+        onToggleSelection={handleToggleAllSelection}
+        onToggleSelectionMode={handleToggleSelectionMode}
       />
 
       {dueTasks.length === 0 ? (
@@ -214,6 +310,9 @@ export default function TodaysRecurringTasks({
               variant="recurring"
               additionalBadges={getRecurringBadges(task)}
               onDelete={handleDelete}
+              selectionMode={selectionMode}
+              isSelected={selectedTaskIds.has(task.id)}
+              onSelectionChange={handleTaskSelection}
             />
           ))}
         </div>
@@ -253,6 +352,8 @@ export default function TodaysRecurringTasks({
                 if (isToday) dateLabel = "Today";
                 else if (isTomorrow) dateLabel = "Tomorrow";
 
+                const groupSelectedCount = dateTasks.filter(task => selectedTaskIds.has(task.id)).length;
+                
                 return (
                   <TaskGroup
                     key={dateKey}
@@ -261,6 +362,9 @@ export default function TodaysRecurringTasks({
                     count={dateTasks.length}
                     countLabel="task"
                     colorScheme="purple"
+                    selectionMode={selectionMode}
+                    selectedCount={groupSelectedCount}
+                    onToggleGroupSelection={() => handleToggleGroupSelection(dateTasks)}
                   >
                     {dateTasks.map((task) => (
                       <TaskCard
@@ -271,6 +375,9 @@ export default function TodaysRecurringTasks({
                         variant="recurring"
                         additionalBadges={getRecurringBadges(task)}
                         onDelete={handleDelete}
+                        selectionMode={selectionMode}
+                        isSelected={selectedTaskIds.has(task.id)}
+                        onSelectionChange={handleTaskSelection}
                       />
                     ))}
                   </TaskGroup>
@@ -280,6 +387,15 @@ export default function TodaysRecurringTasks({
           )}
         </div>
       )}
+      
+      <TaskBulkActions
+        selectedCount={selectedTaskIds.size}
+        onBulkPrint={handleBulkPrint}
+        onBulkDelete={handleBulkDelete}
+        onClearSelection={() => setSelectedTaskIds(new Set())}
+        isPrintingBulk={isPrintingBulk}
+        colorScheme="purple"
+      />
     </TaskSectionContainer>
   );
 }

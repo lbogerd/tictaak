@@ -14,6 +14,11 @@ interface TaskSectionHeaderProps {
     isToggled?: boolean;
   };
   colorScheme?: "rose" | "purple" | "green" | "amber";
+  selectionMode?: boolean;
+  selectedCount?: number;
+  totalCount?: number;
+  onToggleSelection?: () => void;
+  onToggleSelectionMode?: () => void;
 }
 
 export function TaskSectionHeader({
@@ -23,6 +28,11 @@ export function TaskSectionHeader({
   countLabel = "items",
   actionButton,
   colorScheme = "rose",
+  selectionMode = false,
+  selectedCount = 0,
+  totalCount = 0,
+  onToggleSelection,
+  onToggleSelectionMode,
 }: TaskSectionHeaderProps) {
   const colorSchemes = {
     rose: {
@@ -49,6 +59,9 @@ export function TaskSectionHeader({
 
   const colors = colorSchemes[colorScheme];
 
+  const isAllSelected = selectedCount === totalCount && totalCount > 0;
+  const isSomeSelected = selectedCount > 0;
+
   return (
     <div className="flex flex-col space-y-4 mb-6 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
       <div className="flex flex-col space-y-2 sm:space-y-0">
@@ -63,24 +76,56 @@ export function TaskSectionHeader({
               {count} {countLabel}
             </Badge>
           )}
+          {selectionMode && selectedCount > 0 && (
+            <Badge
+              variant="outline"
+              className="text-xs sm:text-sm bg-blue-50 border-blue-200 text-blue-700"
+            >
+              {selectedCount} selected
+            </Badge>
+          )}
         </h2>
       </div>
 
-      {actionButton && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={actionButton.onClick}
-          className={`rounded-xl w-full sm:w-auto text-sm sm:text-base justify-center sm:justify-start ${colors.button}`}
-        >
-          {actionButton.icon && (
-            <span className="w-4 h-4 mr-2 flex-shrink-0">
-              {actionButton.icon}
-            </span>
-          )}
-          <span className="truncate">{actionButton.label}</span>
-        </Button>
-      )}
+      <div className="flex items-center gap-2 w-full sm:w-auto">
+        {selectionMode && totalCount > 0 && onToggleSelection && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onToggleSelection}
+            className={`rounded-xl text-sm ${colors.button} border-current`}
+          >
+            {isAllSelected ? "Deselect All" : "Select All"}
+          </Button>
+        )}
+        
+        {onToggleSelectionMode && totalCount > 0 && (
+          <Button
+            variant={selectionMode ? "default" : "ghost"}
+            size="sm"
+            onClick={onToggleSelectionMode}
+            className={`rounded-xl text-sm ${selectionMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : colors.button}`}
+          >
+            {selectionMode ? "Done" : "Select"}
+          </Button>
+        )}
+
+        {actionButton && !selectionMode && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={actionButton.onClick}
+            className={`rounded-xl text-sm sm:text-base justify-center sm:justify-start ${colors.button}`}
+          >
+            {actionButton.icon && (
+              <span className="w-4 h-4 mr-2 flex-shrink-0">
+                {actionButton.icon}
+              </span>
+            )}
+            <span className="truncate">{actionButton.label}</span>
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

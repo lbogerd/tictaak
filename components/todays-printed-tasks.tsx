@@ -4,6 +4,7 @@ import {
   TaskSectionEmptyState,
   TaskSectionLoadingState,
   TaskGroup,
+  TaskBulkActions,
   Badge,
 } from "@/components/ui";
 import { getTasksPrintedToday } from "@/lib/actions";
@@ -30,6 +31,10 @@ export default function TodaysPrintedTasks({
 }: TodaysPrintedTasksProps) {
 	const [printedTasks, setPrintedTasks] = useState<Task[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	
+	// Selection state
+	const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+	const [selectionMode, setSelectionMode] = useState(false);
 
 	useEffect(() => {
 		loadPrintedTasks();
@@ -120,6 +125,54 @@ export default function TodaysPrintedTasks({
 		});
 	};
 
+	// Selection handlers
+	const handleTaskSelection = (taskId: string, selected: boolean) => {
+		setSelectedTaskIds((prev: Set<string>) => {
+			const newSet = new Set(prev);
+			if (selected) {
+				newSet.add(taskId);
+			} else {
+				newSet.delete(taskId);
+			}
+			return newSet;
+		});
+	};
+
+	const handleToggleSelectionMode = () => {
+		setSelectionMode(!selectionMode);
+		if (selectionMode) {
+			setSelectedTaskIds(new Set());
+		}
+	};
+
+	const handleToggleAllSelection = () => {
+		const allTaskIds = printedTasks.map(task => task.id);
+		const allSelected = allTaskIds.every(id => selectedTaskIds.has(id));
+		
+		if (allSelected) {
+			setSelectedTaskIds(new Set());
+		} else {
+			setSelectedTaskIds(new Set(allTaskIds));
+		}
+	};
+
+	const handleToggleGroupSelection = (tasks: Task[]) => {
+		const groupTaskIds = tasks.map(task => task.id);
+		const allGroupSelected = groupTaskIds.every(id => selectedTaskIds.has(id));
+		
+		setSelectedTaskIds((prev: Set<string>) => {
+			const newSet = new Set(prev);
+			
+			if (allGroupSelected) {
+				groupTaskIds.forEach(id => newSet.delete(id));
+			} else {
+				groupTaskIds.forEach(id => newSet.add(id));
+			}
+			
+			return newSet;
+		});
+	};
+
 	if (isLoading) {
 		return (
 			<TaskSectionContainer borderColor="green">
@@ -139,6 +192,11 @@ export default function TodaysPrintedTasks({
 				count={printedTasks.length}
 				countLabel="completed"
 				colorScheme="green"
+				selectionMode={selectionMode}
+				selectedCount={selectedTaskIds.size}
+				totalCount={printedTasks.length}
+				onToggleSelection={handleToggleAllSelection}
+				onToggleSelectionMode={handleToggleSelectionMode}
 			/>
 
 			{printedTasks.length === 0 ? (
@@ -150,30 +208,40 @@ export default function TodaysPrintedTasks({
 				/>
 			) : (
 				<div className="space-y-6">
-					{groupTasksByHour(printedTasks).map(([hourKey, hourTasks]) => (
-						<TaskGroup
-							key={hourKey}
-							title={`Around ${hourKey}`}
-							icon={<CheckCircle className="w-4 h-4" />}
-							count={hourTasks.length}
-							countLabel="task"
-							colorScheme="green"
-						>
-							{hourTasks.map((task) => (
-								<TaskCard
-									key={`printed-${task.id}`}
-									task={task}
-									onPrint={() => { }} // No-op for printed tasks
-									isPrinting={false}
-									variant="recent"
-									additionalBadges={[
-										getTaskTypeBadge(task),
-										getPrintedTimeBadge(task),
-									].filter(Boolean)}
-								/>
-							))}
-						</TaskGroup>
-					))}
+					{groupTasksByHour(printedTasks).map(([hourKey, hourTasks]) => {
+						const groupSelectedCount = hourTasks.filter(task => selectedTaskIds.has(task.id)).length;
+						
+						return (
+							<TaskGroup
+								key={hourKey}
+								title={`Around ${hourKey}`}
+								icon={<CheckCircle className="w-4 h-4" />}
+								count={hourTasks.length}
+								countLabel="task"
+								colorScheme="green"
+								selectionMode={selectionMode}
+								selectedCount={groupSelectedCount}
+								onToggleGroupSelection={() => handleToggleGroupSelection(hourTasks)}
+							>
+								{hourTasks.map((task) => (
+									<TaskCard
+										key={`printed-${task.id}`}
+										task={task}
+										onPrint={() => { }} // No-op for printed tasks
+										isPrinting={false}
+										variant="recent"
+										additionalBadges={[
+											getTaskTypeBadge(task),
+											getPrintedTimeBadge(task),
+										].filter(Boolean)}
+										selectionMode={selectionMode}
+										isSelected={selectedTaskIds.has(task.id)}
+										onSelectionChange={handleTaskSelection}
+									/>
+								))}
+							</TaskGroup>
+						);
+					})}
 				</div>
 			)}
 
@@ -185,6 +253,12 @@ export default function TodaysPrintedTasks({
 					</p>
 				</div>
 			)}
+			
+			<TaskBulkActions
+				selectedCount={selectedTaskIds.size}
+				onClearSelection={() => setSelectedTaskIds(new Set())}
+				colorScheme="green"
+			/>
 		</TaskSectionContainer>
 	);
 }
