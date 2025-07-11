@@ -52,7 +52,14 @@ export async function printTask(title: string, category: string) {
     printer.newLine();
     printer.newLine();
 
-    printer.println(new Date().toLocaleString("nl")); // Format date for Dutch locale
+    printer.println(new Date().toLocaleString("nl-NL", { 
+      year: "numeric", 
+      month: "2-digit", 
+      day: "2-digit", 
+      hour: "2-digit", 
+      minute: "2-digit", 
+      hour12: false 
+    })); // Format date for Dutch locale with 24-hour notation
     printer.newLine();
     printer.drawLine();
 

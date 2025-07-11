@@ -1,5 +1,12 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import {
+  TaskSectionContainer,
+  TaskSectionHeader,
+  TaskSectionEmptyState,
+  TaskSectionLoadingState,
+  TaskGroup,
+  TaskBulkActions,
+  Badge,
+} from "@/components/ui";
 import {
   deleteTask,
   getTodaysDueTasks,
@@ -13,7 +20,6 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
-  Loader2,
   Repeat,
 } from "lucide-react";
 import { DateTime } from "luxon";
@@ -37,6 +43,11 @@ export default function TodaysRecurringTasks({
   const [isLoading, setIsLoading] = useState(true);
   const [showUpcoming, setShowUpcoming] = useState(false);
   const [isLoadingUpcoming, setIsLoadingUpcoming] = useState(false);
+  
+  // Selection state
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [isPrintingBulk, setIsPrintingBulk] = useState(false);
 
   useEffect(() => {
     loadDueTasks();
@@ -165,62 +176,129 @@ export default function TodaysRecurringTasks({
     setDueTasks((prev) => prev.filter((t) => t.id !== taskId));
   };
 
+  // Selection handlers
+  const handleTaskSelection = (taskId: string, selected: boolean) => {
+    setSelectedTaskIds((prev: Set<string>) => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(taskId);
+      } else {
+        newSet.delete(taskId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleToggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    if (selectionMode) {
+      setSelectedTaskIds(new Set());
+    }
+  };
+
+  const handleToggleAllSelection = () => {
+    const allTaskIds = [...dueTasks, ...upcomingTasks].map(task => task.id);
+    const allSelected = allTaskIds.every(id => selectedTaskIds.has(id));
+    
+    if (allSelected) {
+      setSelectedTaskIds(new Set());
+    } else {
+      setSelectedTaskIds(new Set(allTaskIds));
+    }
+  };
+
+  const handleToggleGroupSelection = (tasks: Task[]) => {
+    const groupTaskIds = tasks.map(task => task.id);
+    const allGroupSelected = groupTaskIds.every(id => selectedTaskIds.has(id));
+    
+    setSelectedTaskIds((prev: Set<string>) => {
+      const newSet = new Set(prev);
+      
+      if (allGroupSelected) {
+        groupTaskIds.forEach(id => newSet.delete(id));
+      } else {
+        groupTaskIds.forEach(id => newSet.add(id));
+      }
+      
+      return newSet;
+    });
+  };
+
+  const handleBulkPrint = async () => {
+    if (selectedTaskIds.size === 0) return;
+    
+    setIsPrintingBulk(true);
+    const selectedTasks = [...dueTasks, ...upcomingTasks].filter(task => selectedTaskIds.has(task.id));
+    
+    try {
+      for (const task of selectedTasks) {
+        await handlePrint(task);
+      }
+      setSelectedTaskIds(new Set());
+    } catch (error) {
+      console.error("Bulk print failed:", error);
+    } finally {
+      setIsPrintingBulk(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedTaskIds.size === 0) return;
+    
+    if (!confirm(`Delete ${selectedTaskIds.size} selected tasks?`)) return;
+    
+    try {
+      for (const taskId of selectedTaskIds) {
+        await deleteTask(taskId);
+      }
+      setDueTasks((prev) => prev.filter(task => !selectedTaskIds.has(task.id)));
+      setUpcomingTasks((prev) => prev.filter(task => !selectedTaskIds.has(task.id)));
+      setSelectedTaskIds(new Set());
+    } catch (error) {
+      console.error("Bulk delete failed:", error);
+    }
+  };
+
+  const totalTaskCount = dueTasks.length + upcomingTasks.length;
+
   if (isLoading) {
     return (
-      <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-purple-100 p-8 mb-8">
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
-          <span className="ml-2 text-purple-700">
-            Loading today&apos;s tasks...
-          </span>
-        </div>
-      </div>
+      <TaskSectionContainer borderColor="purple">
+        <TaskSectionLoadingState 
+          message="Loading today's tasks..."
+          colorScheme="purple"
+        />
+      </TaskSectionContainer>
     );
   }
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-purple-100 p-8 mb-8">
-      <div className="flex flex-col space-y-4 mb-6 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-        <div className="flex flex-col space-y-2 sm:space-y-0">
-          <h2 className="text-xl sm:text-2xl font-bold text-purple-800 flex items-center gap-2 flex-wrap">
-            <Repeat className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
-            <span className="min-w-0">Today&apos;s Recurring Tasks</span>
-            {dueTasks.length > 0 && (
-              <Badge
-                variant="outline"
-                className="bg-purple-50 border-purple-200 text-purple-700 text-xs sm:text-sm"
-              >
-                {dueTasks.length} due
-              </Badge>
-            )}
-          </h2>
-        </div>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleToggleUpcoming}
-          className="text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded-xl w-full sm:w-auto text-sm sm:text-base justify-center sm:justify-start"
-          id="view-all-upcoming"
-        >
-          <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
-          <span className="truncate">View All Upcoming</span>
-          {showUpcoming ? (
-            <ChevronUp className="w-4 h-4 ml-1 flex-shrink-0" />
-          ) : (
-            <ChevronDown className="w-4 h-4 ml-1 flex-shrink-0" />
-          )}
-        </Button>
-      </div>
+    <TaskSectionContainer borderColor="purple">
+      <TaskSectionHeader
+        icon={<Repeat className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />}
+        title="Today's Recurring Tasks"
+        count={dueTasks.length}
+        countLabel="due"
+        actionButton={!selectionMode ? {
+          label: "View All Upcoming",
+          onClick: handleToggleUpcoming,
+          icon: showUpcoming ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />,
+        } : undefined}
+        colorScheme="purple"
+        selectionMode={selectionMode}
+        selectedCount={selectedTaskIds.size}
+        totalCount={totalTaskCount}
+        onToggleSelection={handleToggleAllSelection}
+        onToggleSelectionMode={handleToggleSelectionMode}
+      />
 
       {dueTasks.length === 0 ? (
-        <div className="text-center py-4 md:py-8 text-purple-600">
-          <div className="text-4xl mb-4">✨</div>
-          <p className="text-lg">No recurring tasks due today!</p>
-          <p className="text-sm bg-purple-50 rounded-2xl px-6 py-3 inline-block mt-2">
-            All caught up with your recurring schedule 🎉
-          </p>
-        </div>
+        <TaskSectionEmptyState
+          emoji="✨"
+          primaryMessage="No recurring tasks due today!"
+          secondaryMessage="All caught up with your recurring schedule 🎉"
+          colorScheme="purple"
+        />
       ) : (
         <div className="space-y-4">
           {dueTasks.map((task) => (
@@ -232,6 +310,9 @@ export default function TodaysRecurringTasks({
               variant="recurring"
               additionalBadges={getRecurringBadges(task)}
               onDelete={handleDelete}
+              selectionMode={selectionMode}
+              isSelected={selectedTaskIds.has(task.id)}
+              onSelectionChange={handleTaskSelection}
             />
           ))}
         </div>
@@ -246,16 +327,17 @@ export default function TodaysRecurringTasks({
           </h3>
 
           {isLoadingUpcoming ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-5 h-5 animate-spin text-purple-500" />
-              <span className="ml-2 text-purple-600">
-                Loading upcoming tasks...
-              </span>
-            </div>
+            <TaskSectionLoadingState 
+              message="Loading upcoming tasks..."
+              colorScheme="purple"
+            />
           ) : upcomingTasks.length === 0 ? (
-            <div className="text-center py-6 text-purple-600">
-              <p>No recurring tasks scheduled for the next 30 days.</p>
-            </div>
+            <TaskSectionEmptyState
+              emoji="📅"
+              primaryMessage="No recurring tasks scheduled"
+              secondaryMessage="for the next 30 days"
+              colorScheme="purple"
+            />
           ) : (
             <div className="space-y-6">
               {groupTasksByDate(upcomingTasks).map(([dateKey, dateTasks]) => {
@@ -270,40 +352,50 @@ export default function TodaysRecurringTasks({
                 if (isToday) dateLabel = "Today";
                 else if (isTomorrow) dateLabel = "Tomorrow";
 
+                const groupSelectedCount = dateTasks.filter(task => selectedTaskIds.has(task.id)).length;
+                
                 return (
-                  <div key={dateKey}>
-                    <h4 className="text-sm font-medium text-purple-600 mb-3 flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      {dateLabel}
-                      <Badge
-                        variant="outline"
-                        className="text-xs bg-purple-50 border-purple-200 text-purple-700"
-                      >
-                        {dateTasks.length} task
-                        {dateTasks.length !== 1 ? "s" : ""}
-                      </Badge>
-                    </h4>
-
-                    <div className="space-y-3 ml-6">
-                      {dateTasks.map((task) => (
-                        <TaskCard
-                          key={`upcoming-${task.id}`}
-                          task={task}
-                          onPrint={handlePrint}
-                          isPrinting={printingTaskId === task.id}
-                          variant="recurring"
-                          additionalBadges={getRecurringBadges(task)}
-                          onDelete={handleDelete}
-                        />
-                      ))}
-                    </div>
-                  </div>
+                  <TaskGroup
+                    key={dateKey}
+                    title={dateLabel}
+                    icon={<Clock className="w-4 h-4" />}
+                    count={dateTasks.length}
+                    countLabel="task"
+                    colorScheme="purple"
+                    selectionMode={selectionMode}
+                    selectedCount={groupSelectedCount}
+                    onToggleGroupSelection={() => handleToggleGroupSelection(dateTasks)}
+                  >
+                    {dateTasks.map((task) => (
+                      <TaskCard
+                        key={`upcoming-${task.id}`}
+                        task={task}
+                        onPrint={handlePrint}
+                        isPrinting={printingTaskId === task.id}
+                        variant="recurring"
+                        additionalBadges={getRecurringBadges(task)}
+                        onDelete={handleDelete}
+                        selectionMode={selectionMode}
+                        isSelected={selectedTaskIds.has(task.id)}
+                        onSelectionChange={handleTaskSelection}
+                      />
+                    ))}
+                  </TaskGroup>
                 );
               })}
             </div>
           )}
         </div>
       )}
-    </div>
+      
+      <TaskBulkActions
+        selectedCount={selectedTaskIds.size}
+        onBulkPrint={handleBulkPrint}
+        onBulkDelete={handleBulkDelete}
+        onClearSelection={() => setSelectedTaskIds(new Set())}
+        isPrintingBulk={isPrintingBulk}
+        colorScheme="purple"
+      />
+    </TaskSectionContainer>
   );
 }

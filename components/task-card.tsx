@@ -18,6 +18,9 @@ interface TaskCardProps {
   isPrinting: boolean;
   variant?: "recent" | "recurring";
   additionalBadges?: React.ReactNode[];
+  isSelected?: boolean;
+  onSelectionChange?: (taskId: string, selected: boolean) => void;
+  selectionMode?: boolean;
 }
 
 export default function TaskCard({
@@ -28,6 +31,9 @@ export default function TaskCard({
   isPrinting,
   variant = "recent",
   additionalBadges = [],
+  isSelected = false,
+  onSelectionChange,
+  selectionMode = false,
 }: TaskCardProps) {
   const cardColors = {
     recent: {
@@ -46,12 +52,30 @@ export default function TaskCard({
 
   const colors = cardColors[variant];
 
+  const handleSelectionChange = () => {
+    if (onSelectionChange) {
+      onSelectionChange(task.id, !isSelected);
+    }
+  };
+
   return (
     <Card
-      className={`hover:shadow-md transition-all duration-300 transform hover:scale-[1.01] rounded-2xl ${colors.border} ${colors.background}`}
+      className={`hover:shadow-md transition-all duration-300 transform hover:scale-[1.01] rounded-2xl ${colors.border} ${colors.background} ${
+        isSelected ? 'ring-2 ring-blue-400 bg-blue-50/50' : ''
+      }`}
     >
       <CardHeader className="flex flex-col sm:flex-row">
-        <CardTitle className={`text-xl ${colors.title}`}>
+        {selectionMode && (
+          <div className="flex items-center mr-3 mb-2 sm:mb-0">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={handleSelectionChange}
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+            />
+          </div>
+        )}
+        <CardTitle className={`text-xl ${colors.title} ${selectionMode ? 'flex-1' : ''}`}>
           {task.title}
         </CardTitle>
 
