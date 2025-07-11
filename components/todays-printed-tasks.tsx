@@ -10,6 +10,7 @@ import {
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import TaskCard from "./task-card";
+import SectionContainer from "./section-container";
 
 type Task = Prisma.TaskGetPayload<{
 	include: { category: true };
@@ -116,19 +117,19 @@ export default function TodaysPrintedTasks({
 
 	if (isLoading) {
 		return (
-			<div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-green-100 p-8 mb-8">
+			<SectionContainer variant="green">
 				<div className="flex items-center justify-center py-8">
 					<Loader2 className="w-6 h-6 animate-spin text-green-500" />
 					<span className="ml-2 text-green-700">
 						Loading today&apos;s printed tasks...
 					</span>
 				</div>
-			</div>
+			</SectionContainer>
 		);
 	}
 
 	return (
-		<div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-green-100 p-8 mb-8">
+		<SectionContainer variant="green">
 			<div className="flex flex-col space-y-4 mb-6 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
 				<div className="flex flex-col space-y-2 sm:space-y-0">
 					<h2 className="text-xl sm:text-2xl font-bold text-green-800 flex items-center gap-2 flex-wrap">
@@ -197,6 +198,6 @@ export default function TodaysPrintedTasks({
 					</p>
 				</div>
 			)}
-		</div>
+		</SectionContainer>
 	);
 }

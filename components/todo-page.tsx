@@ -33,6 +33,7 @@ import RecurringTaskOptions from "./recurring-task-options";
 import TaskCard from "./task-card";
 import TodaysPrintedTasks from "./todays-printed-tasks";
 import TodaysRecurringTasks from "./todays-recurring-tasks";
+import SectionContainer from "./section-container";
 
 type Category = Prisma.CategoryGetPayload<Record<string, never>>;
 type Task = Prisma.TaskGetPayload<{
@@ -476,10 +477,7 @@ export default function TodoPage({
         />
 
         {/* Recent Tasks - For Reprinting */}
-        <div
-          id="recent-tasks"
-          className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-rose-100 p-8"
-        >
+        <SectionContainer id="recent-tasks" variant="rose">
           <h2 className="text-2xl font-bold text-amber-800 mb-3 flex items-center gap-2">
             <Archive className="w-6 h-6" />
             Your Recent Tasks
@@ -553,7 +551,7 @@ export default function TodoPage({
               )}
             </>
           )}
-        </div>
+        </SectionContainer>
 
         {/* Footer Info */}
         <div className="md:block hidden mt-8 text-center text-sm text-amber-600">
