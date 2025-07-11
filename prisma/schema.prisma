@@ -30,8 +30,11 @@ model Task {
   category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
-  // Recurring task fields
+
+  // Task type - determines how the task is handled
+  taskType    TaskType   @default(IMMEDIATE)
+
+  // Recurring task fields (existing)
   isRecurring Boolean @default(false)
   recurringType String? // 'daily', 'weekly', 'monthly'
   recurringInterval Int? @default(1) // every N days/weeks/months
@@ -40,5 +43,16 @@ model Task {
   nextPrintDate DateTime?
   isActive Boolean @default(true) // to pause/resume recurring tasks
 
+  // One-off planned task fields (new)
+  scheduledFor DateTime? // When the one-off task should be due
+  isScheduled Boolean @default(false) // Whether this is a scheduled task
+  isPrinted Boolean @default(false) // Whether the one-off task has been printed
+
   @@map("tasks")
+}
+
+enum TaskType {
+  IMMEDIATE
+  RECURRING
+  SCHEDULED
 }
