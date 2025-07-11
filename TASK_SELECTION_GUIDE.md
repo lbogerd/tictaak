@@ -79,7 +79,7 @@ I have successfully implemented a comprehensive task selection system that allow
 **Usage:**
 ```tsx
 <TaskGroup
-  title="Around 2:00 PM"
+  title="Around 14:00"
   icon={<Clock className="w-4 h-4" />}
   count={hourTasks.length}
   countLabel="task"
