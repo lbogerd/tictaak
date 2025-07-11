@@ -5,6 +5,7 @@ import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Printer, Edit3, Trash2, Loader2 } from "lucide-react";
 import { DateTime } from "luxon";
 import { Prisma } from "@prisma/client";
+import { Checkbox } from "./ui/checkbox";
 
 type Task = Prisma.TaskGetPayload<{
   include: { category: true };
@@ -60,18 +61,19 @@ export default function TaskCard({
 
   return (
     <Card
-      className={`hover:shadow-md transition-all duration-300 transform hover:scale-[1.01] rounded-2xl ${colors.border} ${colors.background} ${
+      className={`hover:shadow-md transition-all duration-300 transform hover:scale-[1.01] rounded-2xl ${
+        colors.border
+      } ${colors.background} ${
         isSelected ? "ring-2 ring-blue-400 bg-blue-50/50" : ""
       }`}
     >
       <CardHeader className="flex flex-col sm:flex-row">
         {selectionMode && (
           <div className="flex items-center mr-3 mb-2 sm:mb-0">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={isSelected}
-              onChange={handleSelectionChange}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+              onCheckedChange={handleSelectionChange}
+              className="data-[state=checked]:bg-blue-500 data-[state=checked]:text-white data-[state=checked]:border-blue-500"
             />
           </div>
         )}
@@ -127,8 +129,8 @@ export default function TaskCard({
           {isPrinting
             ? "Printing..."
             : variant === "recurring"
-              ? "Print Now"
-              : "Reprint"}
+            ? "Print Now"
+            : "Reprint"}
         </Button>
 
         {onEdit && (
