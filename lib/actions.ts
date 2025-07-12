@@ -162,8 +162,11 @@ export async function calculateNextPrintDate(
 }
 
 // Get tasks that are due for printing today (both recurring and scheduled)
-export async function getTodaysDueTasks() {
-  const today = DateTime.now().startOf("day");
+export async function getTodaysDueTasks(clientTimezone?: string) {
+  const zone = clientTimezone || "UTC"; // Default to UTC if no timezone is provided
+  const nowInZone = DateTime.now().setZone(zone);
+
+  const today = nowInZone.startOf("day");
   const tomorrow = today.plus({ days: 1 });
 
   // Get recurring tasks that are due today
@@ -225,8 +228,10 @@ export async function getTodaysDueTasks() {
 }
 
 // Get all upcoming recurring tasks (next 30 days)
-export async function getUpcomingRecurringTasks() {
-  const today = DateTime.now().startOf("day");
+export async function getUpcomingRecurringTasks(clientTimezone?: string) {
+  const zone = clientTimezone || "UTC";
+  const nowInZone = DateTime.now().setZone(zone);
+  const today = nowInZone.startOf("day");
   const thirtyDaysFromNow = today.plus({ days: 30 });
 
   return await db.task.findMany({
@@ -248,8 +253,10 @@ export async function getUpcomingRecurringTasks() {
 }
 
 // Get all upcoming scheduled tasks (next 30 days)
-export async function getUpcomingScheduledTasks() {
-  const today = DateTime.now().startOf("day");
+export async function getUpcomingScheduledTasks(clientTimezone?: string) {
+  const zone = clientTimezone || "UTC";
+  const nowInZone = DateTime.now().setZone(zone);
+  const today = nowInZone.startOf("day");
   const thirtyDaysFromNow = today.plus({ days: 30 });
 
   return await db.task.findMany({
@@ -271,10 +278,10 @@ export async function getUpcomingScheduledTasks() {
 }
 
 // Get all upcoming tasks (both recurring and scheduled) for the next 30 days
-export async function getUpcomingTasks() {
+export async function getUpcomingTasks(clientTimezone?: string) {
   const [recurringTasks, scheduledTasks] = await Promise.all([
-    getUpcomingRecurringTasks(),
-    getUpcomingScheduledTasks(),
+    getUpcomingRecurringTasks(clientTimezone),
+    getUpcomingScheduledTasks(clientTimezone),
   ]);
 
   // Combine and sort by due time

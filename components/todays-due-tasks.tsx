@@ -61,7 +61,8 @@ export default function TodaysDueTasks({
   const loadDueTasks = async () => {
     try {
       setIsLoading(true);
-      const tasks = await getTodaysDueTasks();
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const tasks = await getTodaysDueTasks(timezone);
       setDueTasks(tasks);
     } catch (error) {
       console.error("Failed to load due tasks:", error);
@@ -75,7 +76,8 @@ export default function TodaysDueTasks({
 
     try {
       setIsLoadingUpcoming(true);
-      const tasks = await getUpcomingTasks();
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const tasks = await getUpcomingTasks(timezone);
       setUpcomingTasks(tasks);
     } catch (error) {
       console.error("Failed to load upcoming tasks:", error);
