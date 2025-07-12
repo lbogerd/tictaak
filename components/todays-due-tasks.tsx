@@ -10,12 +10,19 @@ import {
 import {
   deleteTask,
   getTodaysDueTasks,
-  getUpcomingRecurringTasks,
+  getUpcomingTasks,
   updateTaskAfterPrint,
+  markScheduledTaskAsPrinted,
 } from "@/lib/actions";
 import { printTask } from "@/lib/printer";
 import { Prisma } from "@prisma/client";
-import { Calendar, ChevronDown, ChevronUp, Clock, Repeat } from "lucide-react";
+import {
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  CalendarDays,
+} from "lucide-react";
 import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import TaskCard from "./task-card";
@@ -24,15 +31,15 @@ type Task = Prisma.TaskGetPayload<{
   include: { category: true };
 }>;
 
-interface TodaysRecurringTasksProps {
+interface TodaysDueTasksProps {
   refreshTrigger?: number;
   onTaskPrinted?: (task: Task) => void;
 }
 
-export default function TodaysRecurringTasks({
+export default function TodaysDueTasks({
   refreshTrigger,
   onTaskPrinted,
-}: TodaysRecurringTasksProps) {
+}: TodaysDueTasksProps) {
   const [dueTasks, setDueTasks] = useState<Task[]>([]);
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
   const [printingTaskId, setPrintingTaskId] = useState<string | null>(null);
@@ -68,7 +75,7 @@ export default function TodaysRecurringTasks({
 
     try {
       setIsLoadingUpcoming(true);
-      const tasks = await getUpcomingRecurringTasks();
+      const tasks = await getUpcomingTasks();
       setUpcomingTasks(tasks);
     } catch (error) {
       console.error("Failed to load upcoming tasks:", error);
@@ -94,8 +101,13 @@ export default function TodaysRecurringTasks({
       const result = await printTask(task.title, task.category.name);
 
       if (result.success) {
-        // Update the task after printing
-        await updateTaskAfterPrint(task.id);
+        if (task.isRecurring) {
+          // Update recurring task after printing
+          await updateTaskAfterPrint(task.id);
+        } else if (task.isScheduled) {
+          // Mark scheduled task as printed
+          await markScheduledTaskAsPrinted(task.id);
+        }
 
         // Remove from due tasks list
         setDueTasks((prev) => prev.filter((t) => t.id !== task.id));
@@ -103,7 +115,7 @@ export default function TodaysRecurringTasks({
         // Notify parent component
         onTaskPrinted?.(task);
 
-        console.log("Recurring task printed successfully");
+        console.log("Task printed successfully");
       } else {
         console.error("Printing failed:", result.error);
         alert("Printing failed: " + result.error);
@@ -131,22 +143,35 @@ export default function TodaysRecurringTasks({
     }
   };
 
-  const getRecurringBadges = (task: Task) => {
+  const getTaskBadges = (task: Task) => {
     const badges = [];
 
-    // Recurring type badge
-    badges.push(
-      <Badge
-        key="recurring-type"
-        variant="outline"
-        className="text-xs rounded-full border-purple-200 text-purple-700 bg-purple-50 capitalize"
-      >
-        {task.recurringType}
-        {task.recurringType === "weekly" &&
-          task.recurringDays &&
-          ` • ${getDayNames(task.recurringDays)}`}
-      </Badge>
-    );
+    if (task.isRecurring) {
+      // Recurring task badges
+      badges.push(
+        <Badge
+          key="recurring-type"
+          variant="outline"
+          className="text-xs rounded-full border-purple-200 text-purple-700 bg-purple-50 capitalize"
+        >
+          {task.recurringType}
+          {task.recurringType === "weekly" &&
+            task.recurringDays &&
+            ` • ${getDayNames(task.recurringDays)}`}
+        </Badge>
+      );
+    } else if (task.isScheduled) {
+      // Scheduled task badge
+      badges.push(
+        <Badge
+          key="scheduled"
+          variant="outline"
+          className="text-xs rounded-full border-blue-200 text-blue-700 bg-blue-50"
+        >
+          Scheduled
+        </Badge>
+      );
+    }
 
     return badges;
   };
@@ -155,10 +180,9 @@ export default function TodaysRecurringTasks({
     const groups: { [key: string]: Task[] } = {};
 
     tasks.forEach((task) => {
-      if (task.nextPrintDate) {
-        const dateKey = DateTime.fromJSDate(task.nextPrintDate).toFormat(
-          "yyyy-MM-dd"
-        );
+      const dueDate = task.nextPrintDate || task.scheduledFor;
+      if (dueDate) {
+        const dateKey = DateTime.fromJSDate(dueDate).toFormat("yyyy-MM-dd");
         if (!groups[dateKey]) {
           groups[dateKey] = [];
         }
@@ -281,8 +305,8 @@ export default function TodaysRecurringTasks({
   return (
     <TaskSectionContainer borderColor="purple">
       <TaskSectionHeader
-        icon={<Repeat className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />}
-        title="Today's Recurring Tasks"
+        icon={<CalendarDays className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />}
+        title="Today's Due Tasks"
         count={dueTasks.length}
         countLabel="due"
         actionButton={
@@ -309,8 +333,8 @@ export default function TodaysRecurringTasks({
       {dueTasks.length === 0 ? (
         <TaskSectionEmptyState
           emoji="✨"
-          primaryMessage="No recurring tasks due today!"
-          secondaryMessage="All caught up with your recurring schedule 🎉"
+          primaryMessage="No tasks due today!"
+          secondaryMessage="All caught up with your schedule 🎉"
           colorScheme="purple"
         />
       ) : (
@@ -322,7 +346,7 @@ export default function TodaysRecurringTasks({
               onPrint={handlePrint}
               isPrinting={printingTaskId === task.id}
               variant="recurring"
-              additionalBadges={getRecurringBadges(task)}
+              additionalBadges={getTaskBadges(task)}
               onDelete={handleDelete}
               selectionMode={selectionMode}
               isSelected={selectedTaskIds.has(task.id)}
@@ -348,7 +372,7 @@ export default function TodaysRecurringTasks({
           ) : upcomingTasks.length === 0 ? (
             <TaskSectionEmptyState
               emoji="📅"
-              primaryMessage="No recurring tasks scheduled"
+              primaryMessage="No upcoming tasks scheduled"
               secondaryMessage="for the next 30 days"
               colorScheme="purple"
             />
@@ -391,7 +415,7 @@ export default function TodaysRecurringTasks({
                         onPrint={handlePrint}
                         isPrinting={printingTaskId === task.id}
                         variant="recurring"
-                        additionalBadges={getRecurringBadges(task)}
+                        additionalBadges={getTaskBadges(task)}
                         onDelete={handleDelete}
                         selectionMode={selectionMode}
                         isSelected={selectedTaskIds.has(task.id)}

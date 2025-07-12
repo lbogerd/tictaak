@@ -30,9 +30,11 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import RecurringTaskOptions from "./recurring-task-options";
+import ScheduleTaskOptions from "./schedule-task-options";
 import TaskCard from "./task-card";
 import TodaysPrintedTasks from "./todays-printed-tasks";
-import TodaysRecurringTasks from "./todays-recurring-tasks";
+import TodaysDueTasks from "./todays-due-tasks";
+import { DateTime } from "luxon";
 
 type Category = Prisma.CategoryGetPayload<Record<string, never>>;
 type Task = Prisma.TaskGetPayload<{
@@ -72,12 +74,16 @@ export default function TodoPage({
   const [isPrinting, setIsPrinting] = useState(false);
   const [isLoadingTasks, startTasksTransition] = useTransition();
   const [printedTasksRefresh, setPrintedTasksRefresh] = useState(0);
-  const [recurringTasksRefresh, setRecurringTasksRefresh] = useState(0);
+  const [dueTasksRefresh, setDueTasksRefresh] = useState(0);
 
   // Recurring task state
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringType, setRecurringType] = useState<string>("weekly");
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
+
+  // Scheduled task state
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [scheduledFor, setScheduledFor] = useState<Date | null>(null);
 
   // Load tasks with pagination
   const loadTasks = async (page: number = 1) => {
@@ -112,6 +118,8 @@ export default function TodoPage({
     setIsRecurring(false);
     setRecurringType("weekly");
     setSelectedDays([]);
+    setIsScheduled(false);
+    setScheduledFor(null);
   }, []);
 
   const closeForm = useCallback(() => {
@@ -144,6 +152,8 @@ export default function TodoPage({
 
   const handleCreate = async (print: boolean = true) => {
     if (!newTitle.trim() || !selectedCategoryId) return;
+
+    // Validation for recurring tasks
     if (
       isRecurring &&
       recurringType === "weekly" &&
@@ -153,32 +163,47 @@ export default function TodoPage({
       return;
     }
 
+    // Validation for scheduled tasks
+    if (isScheduled && !scheduledFor) {
+      alert("Please select a date and time for scheduled tasks");
+      return;
+    }
+
     try {
-      const recurringData = isRecurring
-        ? {
-            isRecurring: true,
-            recurringType,
-            recurringInterval: 1,
-            recurringDays:
-              recurringType === "weekly" ? JSON.stringify(selectedDays) : null,
-            nextPrintDate: calculateNextPrintDate(),
-          }
-        : undefined;
+      let taskData = {};
+
+      if (isRecurring) {
+        taskData = {
+          isRecurring: true,
+          recurringType,
+          recurringInterval: 1,
+          recurringDays:
+            recurringType === "weekly" ? JSON.stringify(selectedDays) : null,
+          nextPrintDate: calculateNextPrintDate(),
+        };
+      } else if (isScheduled) {
+        taskData = {
+          isScheduled: true,
+          scheduledFor: scheduledFor,
+          nextPrintDate: scheduledFor,
+          isPrinted: false,
+        };
+      }
 
       const task = await createTask(
         newTitle,
         selectedCategoryId,
-        recurringData
+        Object.keys(taskData).length > 0 ? taskData : undefined
       );
       setTasks((prev) => [task, ...prev]);
 
-      // If it's a recurring task, trigger refresh of recurring tasks sections
-      if (isRecurring) {
-        setRecurringTasksRefresh((prev) => prev + 1);
+      // If it's a recurring or scheduled task, trigger refresh of due tasks sections
+      if (isRecurring || isScheduled) {
+        setDueTasksRefresh((prev) => prev + 1);
       }
 
-      // Print the task
-      if (print) await handlePrint(task);
+      // Print the task (only for immediate and recurring tasks, not scheduled)
+      if (print && !isScheduled) await handlePrint(task);
 
       // Reset form
       resetForm();
@@ -188,16 +213,16 @@ export default function TodoPage({
   };
 
   const calculateNextPrintDate = (): Date => {
-    const now = new Date();
+    const now = DateTime.now();
 
     if (recurringType === "weekly" && selectedDays.length > 0) {
-      const today = now.getDay();
+      const today = now.weekday % 7; // Convert to 0-6 format (Sunday=0)
       const sortedDays = selectedDays.sort((a, b) => a - b);
 
       // Check if today is one of the selected days
       if (selectedDays.includes(today)) {
         // Available for printing today
-        return now;
+        return now.toJSDate();
       }
 
       // Find next day in the current week
@@ -206,23 +231,21 @@ export default function TodoPage({
       if (nextDay !== undefined) {
         // Next occurrence is this week
         const daysUntilNext = nextDay - today;
-        const nextDate = new Date(now);
-        nextDate.setDate(now.getDate() + daysUntilNext);
-        return nextDate;
+        const nextDate = now.plus({ days: daysUntilNext });
+        return nextDate.toJSDate();
       } else {
         // Next occurrence is next week (first day in the array)
         const daysUntilNext = 7 - today + sortedDays[0];
-        const nextDate = new Date(now);
-        nextDate.setDate(now.getDate() + daysUntilNext);
-        return nextDate;
+        const nextDate = now.plus({ days: daysUntilNext });
+        return nextDate.toJSDate();
       }
     } else if (recurringType === "daily") {
       // Available for printing today
-      return now;
+      return now.toJSDate();
     }
 
     // Default to today for immediate availability
-    return now;
+    return now.toJSDate();
   };
 
   const handlePrint = async (task: Task) => {
@@ -416,15 +439,39 @@ export default function TodoPage({
                 </div>
               </div>
 
-              {/* Recurring Task Options */}
-              <RecurringTaskOptions
-                isRecurring={isRecurring}
-                setIsRecurring={setIsRecurring}
-                recurringType={recurringType}
-                setRecurringType={setRecurringType}
-                selectedDays={selectedDays}
-                setSelectedDays={setSelectedDays}
-              />
+              {/* Task Type Options - Mutually Exclusive */}
+              {!isScheduled && (
+                <RecurringTaskOptions
+                  isRecurring={isRecurring}
+                  setIsRecurring={(value) => {
+                    setIsRecurring(value);
+                    if (value) {
+                      setIsScheduled(false);
+                      setScheduledFor(null);
+                    }
+                  }}
+                  recurringType={recurringType}
+                  setRecurringType={setRecurringType}
+                  selectedDays={selectedDays}
+                  setSelectedDays={setSelectedDays}
+                />
+              )}
+
+              {!isRecurring && (
+                <ScheduleTaskOptions
+                  isScheduled={isScheduled}
+                  setIsScheduled={(value) => {
+                    setIsScheduled(value);
+                    if (value) {
+                      setIsRecurring(false);
+                      setRecurringType("weekly");
+                      setSelectedDays([]);
+                    }
+                  }}
+                  scheduledFor={scheduledFor}
+                  setScheduledFor={setScheduledFor}
+                />
+              )}
 
               <div className="flex flex-col md:flex-row items-center justify-between">
                 <div className="flex gap-4 w-full md:w-auto flex-col md:flex-row">
@@ -439,6 +486,18 @@ export default function TodoPage({
                     >
                       <Plus className="w-5 h-5 mr-2" />
                       Create
+                    </Button>
+                  ) : isScheduled ? (
+                    <Button
+                      onClick={() => handleCreate(false)}
+                      className="bg-gradient-to-r from-blue-400 to-indigo-400 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+                      size="lg"
+                      disabled={
+                        !newTitle.trim() || !selectedCategoryId || !scheduledFor
+                      }
+                    >
+                      <Plus className="w-5 h-5 mr-2" />
+                      Schedule
                     </Button>
                   ) : (
                     <Button
@@ -469,9 +528,9 @@ export default function TodoPage({
           )}
         </div>
 
-        {/* Today's Recurring Tasks */}
-        <TodaysRecurringTasks
-          refreshTrigger={recurringTasksRefresh}
+        {/* Today's Due Tasks */}
+        <TodaysDueTasks
+          refreshTrigger={dueTasksRefresh}
           onTaskPrinted={(task) => {
             setTasks((prev) => {
               // Check if task already exists to prevent duplicates

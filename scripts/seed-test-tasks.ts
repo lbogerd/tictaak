@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { DateTime } from "luxon";
 
 const prisma = new PrismaClient();
 
@@ -31,7 +32,7 @@ async function main() {
       recurringType: "weekly",
       recurringInterval: 1,
       recurringDays: JSON.stringify([1, 3, 5]), // Mon, Wed, Fri
-      nextPrintDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // tomorrow
+      nextPrintDate: DateTime.now().plus({ days: 1 }).toJSDate(), // tomorrow
       isActive: true,
     },
   });
@@ -43,7 +44,7 @@ async function main() {
       categoryId: category.id,
       taskType: "SCHEDULED",
       isScheduled: true,
-      scheduledFor: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+      scheduledFor: DateTime.now().plus({ days: 3 }).toJSDate(), // 3 days from now
       isPrinted: false,
     },
   });

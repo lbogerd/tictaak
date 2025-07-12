@@ -5,6 +5,7 @@ import {
   PrinterTypes,
   ThermalPrinter,
 } from "node-thermal-printer";
+import { DateTime } from "luxon";
 
 /**
  * Prints a task to the printer.
@@ -53,14 +54,14 @@ export async function printTask(title: string, category: string) {
     printer.newLine();
 
     printer.println(
-      new Date().toLocaleString("nl-NL", {
+      DateTime.now().setLocale("nl-NL").toLocaleString({
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
         hour: "2-digit",
         minute: "2-digit",
         hour12: false,
-      }),
+      })
     ); // Format date for Dutch locale with 24-hour notation
     printer.newLine();
     printer.drawLine();
@@ -98,7 +99,7 @@ export interface WrapOptions {
  */
 export async function wrapForThermalPrinter(
   text: string,
-  { maxWidth = 48, chunkAfter = maxWidth - 1 }: WrapOptions = {},
+  { maxWidth = 48, chunkAfter = maxWidth - 1 }: WrapOptions = {}
 ): Promise<string> {
   // Sanity-guard: the chunk length can’t exceed the printable width.
   chunkAfter = Math.min(chunkAfter, maxWidth - 1);
