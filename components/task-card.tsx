@@ -1,10 +1,10 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Printer, Edit3, Trash2, Loader2 } from "lucide-react";
-import { DateTime } from "luxon";
 import { Prisma } from "@prisma/client";
+import { Edit3, Loader2, Printer, Trash2 } from "lucide-react";
+import { DateTime } from "luxon";
+import React from "react";
 import { Checkbox } from "./ui/checkbox";
 
 type Task = Prisma.TaskGetPayload<{
@@ -13,7 +13,7 @@ type Task = Prisma.TaskGetPayload<{
 
 interface TaskCardProps {
   task: Task;
-  onPrint: (task: Task) => void;
+  onPrint?: (task: Task) => void;
   onEdit?: (task: Task) => void;
   onDelete?: (taskId: string) => void;
   isPrinting: boolean;
@@ -61,11 +61,9 @@ export default function TaskCard({
 
   return (
     <Card
-      className={`hover:shadow-md transition-all duration-300 transform hover:scale-[1.01] rounded-2xl ${
-        colors.border
-      } ${colors.background} ${
-        isSelected ? "ring-2 ring-blue-400 bg-blue-50/50" : ""
-      }`}
+      className={`hover:shadow-md transition-all duration-300 transform hover:scale-[1.01] rounded-2xl ${colors.border
+        } ${colors.background} ${isSelected ? "ring-2 ring-blue-400 bg-blue-50/50" : ""
+        }`}
     >
       <CardHeader className="flex flex-col sm:flex-row">
         {selectionMode && (
@@ -113,13 +111,12 @@ export default function TaskCard({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onPrint(task)}
+          onClick={onPrint ? () => onPrint(task) : undefined}
           disabled={isPrinting}
-          className={`w-full sm:w-auto rounded-xl ${
-            variant === "recurring"
+          className={`w-full sm:w-auto rounded-xl ${variant === "recurring"
               ? "bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white border-0"
               : "text-blue-600 border-blue-200 hover:bg-blue-50"
-          }`}
+            }`}
         >
           {isPrinting ? (
             <Loader2 className="w-4 h-4 mr-1 animate-spin" />
@@ -129,8 +126,8 @@ export default function TaskCard({
           {isPrinting
             ? "Printing..."
             : variant === "recurring"
-            ? "Print Now"
-            : "Reprint"}
+              ? "Print Now"
+              : "Reprint"}
         </Button>
 
         {onEdit && (

@@ -17,8 +17,7 @@ async function main() {
     data: {
       title: "Immediate Task Example",
       categoryId: category.id,
-      taskType: "IMMEDIATE",
-      isRecurring: false,
+      recursOnDays: [],
     },
   });
 
@@ -27,13 +26,8 @@ async function main() {
     data: {
       title: "Recurring Task Example",
       categoryId: category.id,
-      taskType: "RECURRING",
-      isRecurring: true,
-      recurringType: "weekly",
-      recurringInterval: 1,
-      recurringDays: JSON.stringify([1, 3, 5]), // Mon, Wed, Fri
+      recursOnDays: [1, 3, 5], // Mon, Wed, Fri
       nextPrintDate: DateTime.now().plus({ days: 1 }).toJSDate(), // tomorrow
-      isActive: true,
     },
   });
 
@@ -42,10 +36,8 @@ async function main() {
     data: {
       title: "Scheduled Task Example",
       categoryId: category.id,
-      taskType: "SCHEDULED",
-      isScheduled: true,
-      scheduledFor: DateTime.now().plus({ days: 3 }).toJSDate(), // 3 days from now
-      isPrinted: false,
+      recursOnDays: [],
+      nextPrintDate: DateTime.now().plus({ days: 3 }).toJSDate(), // 3 days from now
     },
   });
 
