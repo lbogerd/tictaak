@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -24,29 +18,23 @@ model Category {
 }
 
 model Task {
-  id          String   @id @default(cuid())
-  title       String
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Task type - determines how the task is handled
-  taskType    TaskType   @default(IMMEDIATE)
-
-  // Recurring task fields (existing)
-  isRecurring Boolean @default(false)
-  recurringType String? // 'daily', 'weekly', 'monthly'
-  recurringInterval Int? @default(1) // every N days/weeks/months
-  recurringDays String? // JSON array of day numbers (0=Sunday, 1=Monday, etc.) for weekly recurrence
-  lastPrintedAt DateTime?
-  nextPrintDate DateTime?
-  isActive Boolean @default(true) // to pause/resume recurring tasks
-
-  // One-off planned task fields (new)
-  scheduledFor DateTime? // When the one-off task should be due
-  isScheduled Boolean @default(false) // Whether this is a scheduled task
-  isPrinted Boolean @default(false) // Whether the one-off task has been printed
+  id                String    @id @default(cuid())
+  title             String
+  categoryId        String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  isRecurring       Boolean   @default(false)
+  recurringType     String?
+  recurringInterval Int?      @default(1)
+  recurringDays     String?
+  lastPrintedAt     DateTime?
+  nextPrintDate     DateTime?
+  isActive          Boolean   @default(true)
+  isPrinted         Boolean   @default(false)
+  isScheduled       Boolean   @default(false)
+  scheduledFor      DateTime?
+  taskType          TaskType  @default(IMMEDIATE)
+  category          Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@map("tasks")
 }

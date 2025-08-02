@@ -1,8 +1,8 @@
 "use server";
 
 import { Prisma } from "@prisma/client";
-import { revalidatePath } from "next/cache";
 import { DateTime } from "luxon";
+import { revalidatePath } from "next/cache";
 import { db } from "./prisma";
 
 // Task actions
@@ -161,139 +161,67 @@ export async function calculateNextPrintDate(
   return nextDate.toJSDate();
 }
 
-// Get tasks that are due for printing today (both recurring and scheduled)
-export async function getTodaysDueTasks(clientTimezone?: string) {
+// Get tasks that are due within the next X days
+// 0 days = today, 1 day = tomorrow, etc
+async function getDueTasks(days = 1, dayOffset = 0, clientTimezone?: string) {
   const zone = clientTimezone || "UTC"; // Default to UTC if no timezone is provided
   const nowInZone = DateTime.now().setZone(zone);
+  const startOfDay = nowInZone.startOf("day").plus({ days: dayOffset });
+  const endOfDay = startOfDay.plus({ days });
 
-  const today = nowInZone.startOf("day");
-  const tomorrow = today.plus({ days: 1 });
-
-  // Get recurring tasks that are due today
-  const recurringTasks = await db.task.findMany({
+  return await db.task.findMany({
     where: {
-      isRecurring: true,
-      isActive: true,
-      nextPrintDate: {
-        gte: today.toJSDate(),
-        lt: tomorrow.toJSDate(),
-      },
-      OR: [
+      AND: [
+        { isActive: true },
         {
-          lastPrintedAt: {
-            lt: today.toJSDate(),
-          },
-        },
-        {
-          lastPrintedAt: null,
+          OR: [
+            // nextPrintDate is within the specified range
+            {
+              nextPrintDate: {
+                gte: startOfDay.toJSDate(),
+                lt: endOfDay.toJSDate(),
+              },
+              lastPrintedAt: {
+                lt: startOfDay.toJSDate(),
+              },
+            },
+            // daily recurring tasks not printed today
+            {
+              recurringType: "daily",
+              lastPrintedAt: {
+                lt: startOfDay.toJSDate(),
+              },
+            },
+            // weekly recurring tasks that are due today
+            {
+              recurringType: "weekly",
+              recurringDays: {
+                contains: startOfDay.weekday.toString(),
+              },
+              lastPrintedAt: {
+                lt: startOfDay.toJSDate(),
+              },
+            },
+          ],
         },
       ],
     },
     include: {
       category: true,
     },
-    orderBy: {
-      nextPrintDate: "asc",
-    },
-  });
-
-  // Get scheduled tasks that are due today
-  const scheduledTasks = await db.task.findMany({
-    where: {
-      isScheduled: true,
-      isPrinted: false,
-      scheduledFor: {
-        gte: today.toJSDate(),
-        lt: tomorrow.toJSDate(),
-      },
-    },
-    include: {
-      category: true,
-    },
-    orderBy: {
-      scheduledFor: "asc",
-    },
-  });
-
-  // Combine and sort by due time
-  const allTasks = [...recurringTasks, ...scheduledTasks];
-  return allTasks.sort((a, b) => {
-    const aTime = a.nextPrintDate || a.scheduledFor;
-    const bTime = b.nextPrintDate || b.scheduledFor;
-    if (!aTime && !bTime) return 0;
-    if (!aTime) return 1;
-    if (!bTime) return -1;
-    return aTime.getTime() - bTime.getTime();
   });
 }
 
-// Get all upcoming recurring tasks (next 30 days)
-export async function getUpcomingRecurringTasks(clientTimezone?: string) {
-  const zone = clientTimezone || "UTC";
-  const nowInZone = DateTime.now().setZone(zone);
-  const today = nowInZone.startOf("day");
-  const thirtyDaysFromNow = today.plus({ days: 30 });
+// Get tasks that are due for printing today (both recurring and scheduled)
+export async function getTodaysDueTasks(clientTimezone?: string) {
+  const zone = clientTimezone || "UTC"; // Default to UTC if no timezone is provided
 
-  return await db.task.findMany({
-    where: {
-      isRecurring: true,
-      isActive: true,
-      nextPrintDate: {
-        gte: today.toJSDate(),
-        lt: thirtyDaysFromNow.toJSDate(),
-      },
-    },
-    include: {
-      category: true,
-    },
-    orderBy: {
-      nextPrintDate: "asc",
-    },
-  });
-}
-
-// Get all upcoming scheduled tasks (next 30 days)
-export async function getUpcomingScheduledTasks(clientTimezone?: string) {
-  const zone = clientTimezone || "UTC";
-  const nowInZone = DateTime.now().setZone(zone);
-  const today = nowInZone.startOf("day");
-  const thirtyDaysFromNow = today.plus({ days: 30 });
-
-  return await db.task.findMany({
-    where: {
-      isScheduled: true,
-      isPrinted: false,
-      scheduledFor: {
-        gte: today.toJSDate(),
-        lt: thirtyDaysFromNow.toJSDate(),
-      },
-    },
-    include: {
-      category: true,
-    },
-    orderBy: {
-      scheduledFor: "asc",
-    },
-  });
+  return await getDueTasks(1, 0, clientTimezone);
 }
 
 // Get all upcoming tasks (both recurring and scheduled) for the next 30 days
 export async function getUpcomingTasks(clientTimezone?: string) {
-  const [recurringTasks, scheduledTasks] = await Promise.all([
-    getUpcomingRecurringTasks(clientTimezone),
-    getUpcomingScheduledTasks(clientTimezone),
-  ]);
-
-  // Combine and sort by due time
-  const allTasks = [...recurringTasks, ...scheduledTasks];
-  return allTasks.sort((a, b) => {
-    const aTime = a.nextPrintDate || a.scheduledFor;
-    const bTime = b.nextPrintDate || b.scheduledFor;
-    if (!aTime && !bTime) return 0;
-    if (!aTime) return 1;
-    if (!bTime) return -1;
-    return aTime.getTime() - bTime.getTime();
-  });
+  return await getDueTasks(30, 1, clientTimezone);
 }
 
 // Update task after printing (for recurring tasks)
