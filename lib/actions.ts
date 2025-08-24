@@ -214,8 +214,6 @@ async function getDueTasks(days = 1, dayOffset = 0, clientTimezone?: string) {
 
 // Get tasks that are due for printing today (both recurring and scheduled)
 export async function getTodaysDueTasks(clientTimezone?: string) {
-  const zone = clientTimezone || "UTC"; // Default to UTC if no timezone is provided
-
   return await getDueTasks(1, 0, clientTimezone);
 }
 
